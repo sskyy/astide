@@ -1,0 +1,40 @@
+[data-type="ThisExpression"] variable {
+  color: #f91825;
+}
+
+[data-type="AssignmentExpression"] operator {
+  color: #8be9fd;
+}
+
+[data-type="CallExpression"] {
+  & > boundary[start]{
+    margin-right: 0
+  }
+  & > boundary[end]{
+    margin-left: 0
+  }
+
+  & > container[data-name="arguments"] {
+    display: inline;
+  }
+
+  & > [data-type="MemberExpression"] {
+    & > identifier[data-name="property"] {
+      color: #677af0;
+    }
+  }
+}
+
+[data-type="ArrowFunctionExpression"] {
+  display: inline;
+}
+
+[data-type="MemberExpression"] {
+  & > identifier[data-name="property"] {
+    color: #ffffff;
+  }
+
+  & > variable {
+    color: #ffb66a;
+  }
+}

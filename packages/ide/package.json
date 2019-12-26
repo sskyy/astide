@@ -1,0 +1,23 @@
+{
+  "name": "astide",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "acorn": "^7.1.0",
+    "acorn-jsx": "^5.1.0",
+    "estraverse": "^4.3.0",
+    "esutils": "^2.0.3",
+    "snabbdom-pragma": "^2.8.0"
+  },
+  "devDependencies": {
+    "@babel/plugin-transform-react-jsx": "^7.7.4",
+    "raw-loader": "^4.0.0",
+    "snabbdom": "^0.7.3"
+  }
+}
