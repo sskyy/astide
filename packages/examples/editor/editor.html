@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+  <style>
+  body {
+    background: #282a36;
+  }
+  #root {
+    display: flex;
+    flex-direction: column;
+  }
+
+    #top {
+        height: 50px;
+        width: 100%;
+        background: #1d84f0;
+    }
+    #container {
+        width: 100%;
+        display: flex;
+        flex-grow: 1;
+    }
+    #left {
+        width: 100px;
+        background: #677af0;
+    }
+    #right {
+        flex-grow: 1;
+        overflow: scroll;
+    }
+    </style>
+</head>
+
+<body>
+<div id="root">
+    <div id="top">top</div>
+    <div id="container">
+        <div id="left">left</div>
+        <div id="right">
+            <div id="editor"></div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

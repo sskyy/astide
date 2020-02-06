@@ -11,8 +11,10 @@
   "dependencies": {
     "acorn": "^7.1.0",
     "acorn-jsx": "^5.1.0",
+    "dexie": "^2.0.4",
     "estraverse": "^4.3.0",
     "esutils": "^2.0.3",
+    "lokijs": "^1.5.8",
     "snabbdom-pragma": "^2.8.0"
   },
   "devDependencies": {

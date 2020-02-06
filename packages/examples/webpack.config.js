@@ -1,4 +1,5 @@
 const path = require('path')
+const webpack = require('webpack')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 
 const getStyleLoaders = (cssOptions, preProcessor) => {
@@ -15,19 +16,40 @@ const getStyleLoaders = (cssOptions, preProcessor) => {
   return loaders;
 };
 
+const devEnginePath = path.resolve('../../../@ariesate/engine/packages')
+
+console.log(path.resolve(devEnginePath, 'controller-axii/src/index.js'),)
+
 module.exports = {
   mode: 'development',
   entry: {
-    ide: './basic/basic.js',
+    editor: './editor/editor.js',
+    ide: './ide/ide.js',
+    fs: './fs/fs.js',
   },
   devtool: 'inline-source-map',
   plugins: [
     new HtmlWebpackPlugin({
-      title: 'Basic Example',
+      title: 'Editor Example',
+      chunks: ['editor'],
+      filename: 'editor.html',
+      template: './editor/editor.html',
+    }),
+    new HtmlWebpackPlugin({
+      title: 'IDE Example',
       chunks: ['ide'],
       filename: 'ide.html',
       template: 'common-template.html',
     }),
+    new HtmlWebpackPlugin({
+      title: 'FS Example',
+      chunks: ['fs'],
+      filename: 'fs.html',
+      template: 'common-template.html',
+    }),
+    new webpack.DefinePlugin({
+      __DEV__: true,
+    })
   ],
   output: {
     filename: '[name].bundle.js',
@@ -56,9 +78,10 @@ module.exports = {
     ],
   },
   resolve: {
-    // symlinks: true
     alias: {
-      astide: path.resolve('../ide/src')
+      astide: path.resolve('../ide/src'),
+      axii: path.resolve(devEnginePath, 'controller-axii/src/index.js'),
+      '@ariesate/are': path.resolve(devEnginePath, 'engine'),
     },
   },
 }
