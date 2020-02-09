@@ -15,14 +15,20 @@ import { createElement, vnodeComputed } from 'axii';
  View 是如何进行第一次展示，是用延迟的方式还是一次性读取，由 View 和 Storage 自己约定。
  */
 
-function Directory({ name, uri, files, actions, isDirectory }) {
+function Directory({ name, path, files, actions, isDirectory }) {
+
+  function create() {
+    const filename = prompt('file name:')
+    actions.create(path, filename)
+  }
+
   return (
     <div>
       <div>
-        <span>{name}</span>
-        <button onClick={() => actions.create(uri)}>+</button>
+        <span>[{name}]</span>
+        <button onClick={create}>+</button>
       </div>
-      <div>
+      <div style={{paddingLeft: 10}}>
         {vnodeComputed(() => {
           return files.map(file => isDirectory(file) ?
             (<Directory {...file} actions={actions} isDirectory={isDirectory}/>) :
@@ -40,11 +46,12 @@ function File({ name, status, actions, uri }) {
     <div>
       <span>{name}</span>
       <button onClick={() => actions.open(uri)}>open</button>
+      <button onClick={() => actions.remove(uri)}>remove</button>
     </div>
   )
 }
 
 
-export default function TreeView({ rootName = 'root', allFiles, isDirectory, actions }) {
-  return <Directory name={rootName} files={allFiles} actions={actions} isDirectory={isDirectory}/>
+export default function TreeView({ rootName = 'root', fileRoot, isDirectory, actions }) {
+  return <Directory name={rootName} files={fileRoot.files} actions={actions} isDirectory={isDirectory}/>
 }

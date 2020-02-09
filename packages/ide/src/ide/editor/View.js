@@ -2,6 +2,7 @@
 import createElement from '../../base/render/createElement';
 import Vnode from '../../base/render/VNode'
 import { patch } from '../../base/render/digest'
+import { invariant } from '../../base/util';
 
 function replaceItem(arr, origin, next) {
   const index = arr.indexOf(origin)
@@ -43,21 +44,16 @@ export default class View {
   }
   render(container) {
     patch(container,
-      <div style={{position: 'relative'}}>
+      <editor style={{position: 'relative'}}>
         {this.bottomLayers}
         {this.defaultLayer}
         {this.topLayers}
-      </div>,
+      </editor>,
     )
   }
   patch = (container, next) => {
     // 支持 vnode， 或者简单的对象。
-    if( next instanceof Vnode) {
-      patch(container, next)
-    } else {
-      Object.keys(next).forEach(k => {
-        container[k] = next[k]
-      })
-    }
+    invariant(next instanceof Vnode, 'can only patch vnode')
+    return patch(container, next)
   }
 }

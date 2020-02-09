@@ -5,8 +5,9 @@ import { invariant } from '../../base/util';
 import { VIEW_NODE_TYPE_TEXT } from './constant';
 
 const STATEMENT_LIKE_NAMES = ['statement','declaration', 'specifier', 'definition']
-const EXCLUDE_SEMICOLON_STATEMENT_TYPES = ['BlockStatement', 'IfStatement']
+const EXCLUDE_SEMICOLON_STATEMENT_TYPES = ['BlockStatement', 'IfStatement', 'FunctionDeclaration']
 const NODE_SELECTOR = '[node]'
+const KEYWORDS = ["do", "if", "in", "for", "let", "new", "try", "var", "case", "else", "enum", "eval", "null", "this", "true", "void", "with", "await", "break", "catch", "class", "const", "false", "super", "throw", "while", "yield", "delete", "export", "import", "public", "return", "static", "switch", "typeof", "default", "extends", "finally", "package", "private", "continue", "debugger", "function", "arguments", "interface", "protected", "implements", "instanceof"]
 
 class Storage {
   constructor() {
@@ -69,8 +70,6 @@ export default class Source {
     this.nodeRefStorage = new Storage()
     this.nextSiblingChain = new WeakMap()
     this.prevSiblingChain = new WeakMap()
-    this.firstTextNodeMap = new WeakMap()
-    this.lastTextNodeMap = new WeakMap()
   }
   linkNode(parent, key, child) {
     // CAUTION 这是会暴露出去的 api
@@ -90,7 +89,22 @@ export default class Source {
       const prevViewNode = this.getViewNode(child)
       // TODO 通知外部视图更新。这里机制有问题，最后 digest 是外部控制的，但 viewNode 又都是这里处理。
       // 把 viewNode 当成一个跟外部通信的 token ?
-      this.patch(prevViewNode, newVNode)
+      const newViewNode = this.patch(prevViewNode, newVNode)
+
+      // 重新建立前后链。
+      const prevSibling = this.getPrevSibling(this.getFirstTextNode(prevViewNode))
+      const nextSibling = this.getNextSibling(this.getLastTextNode(prevViewNode))
+      if (prevSibling) {
+        const nextFirstTextNode = this.getFirstTextNode(newViewNode)
+        this.prevSiblingChain.set(nextFirstTextNode, prevSibling)
+        this.nextSiblingChain.set(prevSibling, nextFirstTextNode)
+      }
+
+      if (nextSibling) {
+        const nextLastTextNode = this.getLastTextNode(newViewNode)
+        this.prevSiblingChain.set(nextSibling, nextLastTextNode)
+        this.nextSiblingChain.set(nextLastTextNode, nextSibling)
+      }
 
       // 清理缓存
       delete child.replaceWith
@@ -120,24 +134,27 @@ export default class Source {
       // 2 给所有叶子节点连上 nextSibling。tab 跳转要用/stringify 要用/remove 要用。
 
       // TODO 这里有问题，其实只需要最上面一次统一处理一次就可以了！现在变成了递归处理
+      // TODO 同时没有考虑，移除节点时 firstTextNode 的更新问题
       vnode.ref = (viewNode) => {
         this.nodeRefStorage.save(node, viewNode)
 
-        walkViewNodeLeaf(viewNode, (prev, current) => {
-          if (!prev) {
-            this.firstTextNodeMap.set(viewNode, current)
-          } else if (!current){
-            this.lastTextNodeMap.set(viewNode, prev)
-          } else {
-            this.nextSiblingChain.set(prev, current)
-            this.prevSiblingChain.set(current, prev)
-          }
-        })
+        // 当是顶节点时，建立 viewNode prev/next link
+        if (node === ast) {
+          walkViewNodeLeaf(viewNode, (prev, current) => {
+            if (prev && current) {
+              this.nextSiblingChain.set(prev, current)
+              this.prevSiblingChain.set(current, prev)
+            }
+          })
+        }
       }
 
       // 给所有 statement like 节点加上分号
-      if (STATEMENT_LIKE_NAMES.includes(vnode.type) && !EXCLUDE_SEMICOLON_STATEMENT_TYPES.includes(vnode.props['data-type'])) {
-        vnode.children.push(<semicolon>;</semicolon>)
+      if (STATEMENT_LIKE_NAMES.includes(vnode.type) && !EXCLUDE_SEMICOLON_STATEMENT_TYPES.includes(node.type)) {
+        // TODO 还要去掉所有有大括号的组合形式
+        if (!(node.type === 'ExportNamedDeclaration' && node.declaration.type === 'FunctionDeclaration')) {
+          vnode.children.push(<semicolon>;</semicolon>)
+        }
       }
 
     })
@@ -185,7 +202,7 @@ export default class Source {
   }
   // public
   stringifyViewNode(viewNodeProxy, selection) {
-    let current = this.firstTextNodeMap.get(viewNodeProxy.toRaw())
+    let current = this.getFirstTextNode(viewNodeProxy.toRaw())
     invariant(current, 'this viewNode is not node')
     // TODO CAUTION 不能有多个 textNode
     const result = [[], [], []]
@@ -211,12 +228,35 @@ export default class Source {
         }
       }
 
-      if (current === this.lastTextNodeMap.get(viewNodeProxy.toRaw())) break
+      if (current === this.getLastTextNode(viewNodeProxy.toRaw())) break
       current = this.nextSiblingChain.get(current)
     }
 
-    return [...result.map(i => i.join(' ')), result]
+
+    return [...result.map(this.concatWords), result]
   }
+  concatWords(words) {
+    return words.reduce((last, current) => {
+      return `${last}${KEYWORDS.includes(current) ? (' ' + current + ' ') : current}`
+    }, '')
+  }
+
+  stringify() {
+    const viewNodeRoot = this.nodeRefStorage.get(this.root)
+    let last = this.getLastTextNode(viewNodeRoot)
+    let current = this.getFirstTextNode(viewNodeRoot)
+
+    const result = []
+    while(true) {
+      invariant(current, 'encounter invalid chain')
+      result.push(current.nodeValue)
+      if (current === last) break
+      current = this.getNextSibling(current)
+    }
+
+    return this.concatWords(result)
+  }
+
   closestNode(viewNode) {
     return viewNode.closest(NODE_SELECTOR)
   }
@@ -238,10 +278,14 @@ export default class Source {
     return this.nextSiblingChain.get(viewNode)
   }
   getFirstTextNode(viewNode) {
-    return this.firstTextNodeMap.get(viewNode)
+    // CAUTION 递归查找，由于不存在看不到或者为空的节点，所以直接用 dom 找就行了
+    if (viewNode.nodeType === VIEW_NODE_TYPE_TEXT) return viewNode
+    return this.getFirstTextNode(viewNode.childNodes[0])
   }
   getLastTextNode(viewNode) {
-    return this.lastTextNodeMap.get(viewNode)
+    // CAUTION 递归查找，由于不存在看不到或者为空的节点，所以直接用 dom 找就行了
+    if (viewNode.nodeType === VIEW_NODE_TYPE_TEXT) return viewNode
+    return this.getLastTextNode(viewNode.childNodes[viewNode.childNodes.length -1])
   }
 
 }

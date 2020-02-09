@@ -6,24 +6,24 @@ const root = document.getElementById('root')
 const editor = new IDE()
 const controller = render(editor.render(), root)
 
-controller.apply(() => {
-  editor.codebase.load([{
-    type: 'javascript',
-    uri: 'd1/d2/a.js',
-    name: 'a.js',
-    content: testScript
-  }, {
-    type: 'javascript',
-    uri: 'd1/d3/b.js',
-    name: 'b.js',
-    content: testScript
-  }, {
-    type: 'javascript',
-    uri: 'd1/d3/c.js',
-    name: 'c.js',
-    content: testScript
-  }])
-})
+// controller.apply(() => {
+//   editor.codebase.load([{
+//     type: 'javascript',
+//     uri: 'd1/d2/a.js',
+//     name: 'a.js',
+//     content: testScript
+//   }, {
+//     type: 'javascript',
+//     uri: 'd1/d3/b.js',
+//     name: 'b.js',
+//     content: testScript
+//   }, {
+//     type: 'javascript',
+//     uri: 'd1/d3/c.js',
+//     name: 'c.js',
+//     content: testScript
+//   }])
+// })
 
 
 /**

@@ -9,10 +9,13 @@ import Parser from './base/Parser';
  * 这里把 Editor 当成工具来用
  */
 
-export default function ASTIDEDefaultEditor({ content, focused }) {
+export default function ASTIDEDefaultEditor({ codePiece, refEditor, focused }) {
   // CAUTION  axii 下，只会 render 一次。所以可以这样写。
   // 只会 render 一次
-  const editor = new Editor({ content, parser: new Parser() })
+  const editor = new Editor({ content: codePiece.content, parser: new Parser() })
+
+  // 给外部引用
+  refEditor(codePiece, editor)
 
   const renderEditor = (ref) => {
     editor.render(ref)

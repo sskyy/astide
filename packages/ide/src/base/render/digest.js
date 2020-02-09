@@ -50,7 +50,8 @@ export function digest(vnodes, container) {
 export function patch(element, vtree) {
   const container = createFragment()
   digest([vtree], container)
-  element.parentNode.replaceChild(container.childNodes[0], element)
-  return container.childNodes[0]
+  const newElement = container.childNodes[0]
+  element.parentNode.replaceChild(newElement, element)
+  return newElement
 }
 

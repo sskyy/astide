@@ -91,45 +91,12 @@ export default class ASTView {
     this.selection.update(range)
   }
 
-  // applyChange({ type, ...payload}) {
-  //   if (type ==='updateViewNode') {
-  //     // dirty
-  //     this.source.dirtyPatchViewNode(payload.viewNode, payload.next)
-  //   } else if (type === 'replaceASTNode') {
-  //     const {viewNodeProxy, next} = payload
-  //     // TODO 会自动更新 view，这样 reactive 好吗？
-  //     this.source.update(viewNodeProxy.getASTNode(), next)
-  //   }
-  // }
-
-  // applySelectionChange({ type, ...payload }) {
-  //   // 两个指令参数不同。
-  //   if (type ==='restoreSelection') {
-  //     const { astNode, start, end } = payload
-  //     // 1. 先通过 astNode 获得 viewNode
-  //     // 2. 找到相应的 range, setRange 即可
-  //     const { ViewNodeProxyClass } = this
-  //     const viewNodeProxy = new ViewNodeProxyClass(this.source.getViewNode(astNode))
-  //     const nextRange = viewNodeProxy.findRangeFromFlatRange(start, end)
-  //     this.selection.update(nextRange)
-  //
-  //   } else if (type === 'updateSelection') {
-  //     this.selection.update(payload.selection)
-  //
-  //   } else  if (type === 'selectASTNode') {
-  //     const { astNode } = payload
-  //     const { ViewNodeProxyClass } = this
-  //     const viewNodeProxy = new ViewNodeProxyClass(this.source.getViewNode(astNode))
-  //     const nextRange = viewNodeProxy.toRange()
-  //     this.selection.update(nextRange)
-  //   }
-  //
-  //   this.listeners && this.listeners(this.selection)
-  // }
-
   render() {
     const output = this.source.generate()
     output.props.onMouseDown = this.onSelectStart
     return output
+  }
+  stringify() {
+    return this.source.stringify()
   }
 }

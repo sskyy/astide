@@ -1,17 +1,5 @@
-import { invariant } from '../../base/util';
-
-function arrayEqual(a, b) {
-  if (a.length !== b.length) return false
-  const toCompare = [...b]
-  const op = a.every((i) => {
-    const index = toCompare.indexOf(i)
-    if (index === -1) return false
-    toCompare.splice(index, 1)
-    return true
-  })
-  return op && b.length !== 0
-}
-
+import { invariant, arrayEqual } from './util'
+import { isState } from './StateManager'
 
 // 特殊键
 const functionNameToKeyCode = {
@@ -78,7 +66,9 @@ function normalizeKeys(input) {
 }
 
 export default class HotkeyManager {
-  constructor(root) {
+  constructor({ stateManager, doublePressPeriod, root }) {
+    this.stateManager = stateManager
+    this.doublePressPeriod = doublePressPeriod
     this.root = root
 
     this.modifierKeyPressed = {
@@ -89,26 +79,27 @@ export default class HotkeyManager {
     }
 
     this.handlers = []
+    this.setupListener()
   }
 
-  on(inputKey, handler) {
+  on(inputKey, scope, handler) {
     const keys = normalizeKeys(inputKey)
-    invariant(this.handlers.every(({ keys: registeredKeys}) => {
-      return !(keys[0] === registeredKeys[0] && arrayEqual(keys[1], registeredKeys[1])
+    invariant(this.handlers.every(({ keys: registeredKeys, scope: registeredScope }) => {
+      const scopeMatch = this.stateManager ? scope === registeredScope : true
+      return !(scopeMatch
+        && keys[0] === registeredKeys[0]
+        && arrayEqual(keys[1], registeredKeys[1])
       )
-    }), `hotkey: ${inputKey} is already registered`)
-    this.handlers.push({ keys, handler })
+    }), `hotkey: ${inputKey} in ${scope} is already registered`)
+    this.handlers.push({ keys, scope, handler })
   }
 
   isPressed(keyName) {
     return this.modifierKeyPressed[modifierNameToKeyCode[keyName]]
   }
-  setup(container) {
-    invariant(!this.root, 'hotkey manager already setup')
-    this.root = container
-    // this.root.addEventListener('keydown', (e) => {
-    // TODO 判断 focus 的状态
-    document.body.addEventListener('keydown', (e) => {
+
+  setupListener() {
+    this.root.addEventListener('keydown', (e) => {
       if (e.isComposing || e.keyCode === 229) {
         return
       }
@@ -118,11 +109,12 @@ export default class HotkeyManager {
         return
       }
 
-
       // CAUTION 一定要在这里把 currentState 提出来，对比的时候是用这个值对比，因为 handler 执行时可能改变 state。
+      const currentState = this.stateManager  ? this.stateManager.getState() : null
       // 执行操作，要能终端，不能跨 state。
-      this.handlers.forEach(({ keys, handler }) => {
-        if (matchKeys(keys, this.modifierKeyPressed, e.which)) {
+      this.handlers.forEach(({ keys, handler, scope }) => {
+        const stateMatch = currentState ? isState(currentState, scope) : true
+        if (stateMatch && matchKeys(keys, this.modifierKeyPressed, e.which)) {
           e.stopPropagation()
           e.preventDefault()
           handler(e)

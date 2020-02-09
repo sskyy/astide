@@ -20,7 +20,6 @@ export default class SelectionView {
       position: 'absolute',
       border: '1px #000 solid',
       background: '#000',
-      zIndex: -1
     }
     return <div style={style} ref={this.layer}></div>
   }

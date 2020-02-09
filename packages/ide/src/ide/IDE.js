@@ -7,13 +7,15 @@ import defaultLayout from '../ASTIDELayout'
 import DefaultCodebase from '../ASTIDECodebase'
 import DefaultWorkspace from '../ASTIDEWorkspace'
 import DefaultFocusManager from './FocusManager'
-
-
+import StateManager, { defaultState } from '../base/StateManager';
+import HotkeyManager from '../base/HotkeyManager';
 
 export default class IDE {
   constructor(options = {}, components = {}) {
     const { layout = defaultLayout, Codebase = DefaultCodebase, FocusManager = DefaultFocusManager, Workspace = DefaultWorkspace, editors = {} } = options
     this.focusManager = new FocusManager()
+    this.stateManager = new StateManager()
+    this.hotkeyManager = new HotkeyManager({ stateManager: this.stateManager, root: document.body })
     this.codebase = new Codebase()
     this.workspace = new Workspace()
     this.navigators = new NavigatorViews(this.codebase, Codebase, Codebase.navigators)
@@ -43,12 +45,19 @@ export default class IDE {
       if(!this.workspace.hasCodePiece(uri)) {
         this.workspace.findCodePiece(uri).setState('removed', true)
       }
+      this.codebase.remove(uri)
     })
 
-    // TODO this.navigators 新建 action ？
-    this.navigators.on('create', (uri) => {
+    this.navigators.on('create', (path, name) => {
+      this.codebase.create(path, name, 'function a (){};').then((newCodePiece) => {
+        this.workspace.addCodePiece(newCodePiece)
+      })
     })
 
+    // TODO 应该进入编辑态才得行。
+    this.hotkeyManager.on('cmd+s', defaultState, () => {
+      this.codebase.save(this.workspace.getFocusedCodePiece())
+    })
   }
   render() {
     return this.layout({

@@ -37,13 +37,11 @@ export default function layout({ navigators, EditorRouter, StatusBar, focusManag
     <GridView layout={windowLayout}>
       <MainNavigator GridView:place="left"/>
       <Workspace GridView:place="right">
-        {({ uri, type, content }) => (
+        {(props) => (
           <EditorRouter
-            type={type}
-            uri={uri}
-            content={content}
-            focused={focusManager.deviate('editor', uri)}
-            onFocus={() => focusManager.focus('editor', uri)}
+            {...props}
+            focused={focusManager.deviate('editor', props.uri)}
+            onFocus={() => focusManager.focus('editor', props.uri)}
           />
         )}
       </Workspace>

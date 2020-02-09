@@ -78,12 +78,23 @@ export default class Selection {
   }
   getRect() {
     // TODO cache?
+    // TODO 鼠标滑词选中？
+    let containerLeft
+    let containerTop
     const {top, left, width, height}  = this.range.getBoundingClientRect()
+    // CAUTION 当选中的部分在行位时，有 bug，不确定是不是 chrome 产生的。先区分判断一下。
+    if (top === 0 && left === 0) {
+      const {top: endContainerTop, right: endContainerRight, }  = this.range.endContainer.getBoundingClientRect()
+      containerLeft = endContainerRight
+      containerTop = endContainerTop
+    } else {
+      containerLeft = left
+      containerTop = top
+    }
     const {top: programTop, left: programLeft } = this.range.startContainer.parentNode.closest('program').getBoundingClientRect()
-
     return {
-      left: left - programLeft,
-      top: top - programTop,
+      left: containerLeft - programLeft,
+      top: containerTop - programTop,
       width,
       height,
     }

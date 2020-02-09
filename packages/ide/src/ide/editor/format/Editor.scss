@@ -1,11 +1,15 @@
 editor {
-  position: relative;
+    position: relative;
+    background: #282a36;
+    display: block;
 }
 
 /**
 common inline 中的样式
  */
 program {
+    z-index: 100;
+    position: relative;
     display: block;
     padding: 0;
     margin: 0;
@@ -71,6 +75,10 @@ program * {
     vertical-align: top;
     white-space: nowrap;
     line-height: 3ex;
+}
+
+program > container {
+    display: block;
 }
 
 program statement,declaration {

@@ -858,7 +858,7 @@ export const baseGenerator = {
   //   }
   // },
   BooleanLiteral(node, state) {
-    return <literal>{node.value}</literal>
+    return <literal>{node.value.toString()}</literal>
   },
   StringLiteral(node, state) {
     return <literal>{`"${node.value}"`}</literal>
