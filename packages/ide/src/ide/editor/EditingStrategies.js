@@ -81,36 +81,67 @@ export function replace(astView, parser, content) {
   //   selection.collapseTo(newViewNode.firstTextNode, selection.startOffset + content.length)
   // } else {
     // 可能破坏了结构。
-    const statementViewNode = selection.closestStatement()
-    const [start, selected, end, stringArr] = source.stringifyViewNode(statementViewNode, selection)
-    const newStatement = `${start}${content}${end}`
-    console.log(newStatement)
-    let newASTNode
-    try {
-      newASTNode = parser.parseStatement(newStatement)
-    } catch(e) {
-      // 不合法, dirty patch 之后 return 掉
-      console.warn('invalid', newStatement)
-      const originOffset = selection.startOffset
-      source.dirtyPatchViewNode(selection, content)
-      selection.collapseTo(selection.startContainer, originOffset + content.length)
-      return
+    if (selection.isAtStatementEnd()) {
+      makeNewStatement(selection, source, parser, content)
+    } else {
+      updateStatement(selection, source, parser, content)
     }
-
-    // 合法
-    const selectionParentViewNode = statementViewNode.replaceASTWith(newASTNode)
-    // 通过数字符的方式找到新的 startContainer 和 offset
-    let container = selectionParentViewNode.firstTextNode
-    let offsetStart = stringArr[0].join('').length + content.length
-
-    while(offsetStart > container.nodeValue.length) {
-      offsetStart = offsetStart - container.nodeValue.length
-      container = container.nextSibling
-    }
-    // offsetStart <= container.nodeValue.length
-    selection.collapseTo(container, offsetStart)
 
   // }
+}
 
+function updateStatement(selection, source, parser, content) {
+  // TODO literal 中要支持空格
+  if (/^\s*$/.test(content)) return false
+  // TODO 针对已经是脏的节点做特殊梳理。
+  // 在 statement 中间。
+  const statementViewNode = selection.closestStatement()
+  const [start, selected, end, stringArr] = source.stringifyViewNode(statementViewNode, selection)
+  const newStatement = `${start}${content}${end}`
+  let newASTNode
+  try {
+    newASTNode = parser.parseStatement(newStatement)
+  } catch(e) {
+    // 不合法, dirty view 之后 return 掉
+    console.warn('invalid', newStatement)
+    const originOffset = selection.startOffset
+    source.dirtyPatchViewNode(selection, content)
+    selection.collapseTo(selection.startContainer, originOffset + content.length)
+    return
+  }
+
+  // 合法
+  const selectionParentViewNode = statementViewNode.replaceASTWith(newASTNode)
+  // 通过数字符的方式找到新的 startContainer 和 offset
+  let container = selectionParentViewNode.firstTextNode
+  let offsetStart = stringArr[0].join('').length + content.length
+
+  while(offsetStart > container.nodeValue.length) {
+    offsetStart = offsetStart - container.nodeValue.length
+    container = container.nextSibling
+  }
+  // offsetStart <= container.nodeValue.length
+  selection.collapseTo(container, offsetStart)
+}
+
+
+export function makeNewStatement(selection, source, parser, content) {
+  if (/^\s*$/.test(content)) return false
+
+  let newASTNode
+  try {
+    newASTNode = parser.parseStatement(content)
+  } catch(e) {
+    // 不合法, dirty view 之后 return 掉
+    selection.endContainer.appendAST(parser.parseStatement(';'))
+
+    selection.collapseTo(selection.endContainer.nextSibling, 0)
+    source.dirtyPatchViewNode(selection, content)
+    selection.collapseTo(selection.endContainer.nextSibling, content.length)
+    return
+  }
+  // 新的合法内容
+  const newViewNode = selection.endContainer.appendAST(newASTNode)
+  selection.collapseTo(newViewNode.firstTextNode, content.length)
 }
 

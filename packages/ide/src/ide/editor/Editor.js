@@ -34,7 +34,6 @@ export default class Editor {
 
       const rect = selection.getRect()
 
-      console.log("selection change", rect.left, rect.top)
       // TODO 还要判断 selection endContainer 的位置
       this.inputBoxView.position(rect.left, rect.top)
       this.inputBoxView.focus()
@@ -67,7 +66,7 @@ export default class Editor {
     keyCommandStrategies.forEach(({ key, handle}) => {
       // TODO 处理 backspace/tab/cmd+a/cmd+c/cmd+v/cmd+d/cmd+x/cmd+z/cmd+\/
       this.hotkeyManager.on(key, undefined, () => {
-        handle(this.astView, this.parser)
+        handle(this.astView, this.parser, this.source)
       })
     })
 

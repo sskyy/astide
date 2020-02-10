@@ -123,5 +123,12 @@ export default class Selection {
     return !this.crossedNodes() && (this.range.startOffset === this.range.endOffset)
   }
 
+  isAtStatementEnd() {
+    // 性能高的新判断
+    if (!this.collapsed()) return false
+    if (this.endOffset !== this.range.endContainer.nodeValue.length) return false
+    return this.closestStatement().lastTextNode.equal(this.endContainer)
+  }
+
 
 }

@@ -5,7 +5,7 @@
  */
 
 import * as EditingStrategies from './EditingStrategies'
-import { remove } from './EditingStrategies';
+import { remove, makeNewStatement } from './EditingStrategies';
 const literalLikeNode = ['literal', 'variable', 'identifier']
 
 export default [
@@ -52,19 +52,40 @@ export default [
     }
   }, {
     key: 'enter',
-    handle(astView, parser) {
+    handle(astView, parser, source) {
       // TODO enter 补全/新建 statement
-      // remove(astView, parser)
-      // 新建 statement
-
-      // 1. 如果当前在 start boundary 后面，说明要在当前结构能建立 statement 的地方建立新的。
-      // function() {   || class xxx { 。反正都是 BlockStatement 中。
-
-      // 2. 如果当前是在 statement 中。建立一个新的 statement
+      const { selection } = astView
+      const lastTextNode = selection.closestStatement().lastTextNode
+      selection.collapseTo(lastTextNode, lastTextNode.nodeValue.length)
+      makeNewStatement(selection, source, parser, ';')
+      // makeNewStatement 会把 selection 移到尾部，我们这里要移到开头
+      selection.collapseTo(selection.endContainer, 0)
 
     }
+  } , {
+    key: 'right',
+    handle(astView) {
+      const { selection } = astView
+      const endOffset = selection.endOffset
+      if (endOffset < selection.endContainer.nodeValue.length) {
+        selection.collapseTo(selection.endContainer, endOffset + 1)
+      } else if (selection.endContainer.nextSibling){
+        selection.collapseTo(selection.endContainer.nextSibling, 0)
+      }
+    }
+  }, {
+    key: 'left',
+    handle(astView) {
+      const { selection } = astView
+      const startOffset = selection.startOffset
+      const prevSibling = selection.endContainer.prevSibling
+      if (startOffset > 0 ) {
+        selection.collapseTo(selection.startContainer, startOffset - 1)
+      } else if (prevSibling){
+        selection.collapseTo(prevSibling, prevSibling.nodeValue.length)
+      }
+    }
   }
-  // TODO 左右/左右并选择/左右到头
 
 
 

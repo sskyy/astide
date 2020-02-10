@@ -5,7 +5,8 @@ import Fragment from '../../base/render/Fragment';
 import createRef from './createRef';
 import CallbackContainer from '../../base/CallbackContainer';
 
-const changeKey = Symbol('change')
+const CHANGE_KEY = Symbol('change')
+const BLUR_KEY = Symbol('blur')
 
 
 export default class InputBoxView {
@@ -20,9 +21,6 @@ export default class InputBoxView {
     this.caretRef.current.style.left = `${left}px`
     this.caretRef.current.style.top = `${top}px`
   }
-  onChange(listener) {
-    this.listeners.add(changeKey, listener)
-  }
   onKey(listener) {
     // 非字母的其他 key
   }
@@ -31,9 +29,21 @@ export default class InputBoxView {
     this.caretRef.current.style.display = 'block'
     this.textareaRef.current.focus()
   }
-  onInput = (e) => {
+  onChange(listener) {
+    this.listeners.add(CHANGE_KEY, listener)
+  }
+  onBlur(listener) {
+    this.listeners.add(BLUR_KEY, listener)
+  }
+  triggerChange = (e) => {
     e.preventDefault()
-    this.listeners.call(changeKey, e)
+    this.listeners.call(CHANGE_KEY, e)
+  }
+  triggerBlur = (e) => {
+    e.preventDefault()
+    // 更新样式
+    this.caretRef.current.style.display = 'none'
+    this.listeners.call(BLUR_KEY, e)
   }
   render() {
     return (
@@ -110,7 +120,8 @@ export default class InputBoxView {
       autoCapitalize="off" autoComplete="off" spellCheck="false"
       role="textbox" aria-haspopup="false"
       style={style}
-      onInput={this.onInput}
+      onInput={this.triggerChange}
+      onBlur={this.triggerBlur}
     />
   }
 }

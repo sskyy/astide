@@ -23,6 +23,9 @@ function createViewNodeProxy(source) {
     replaceASTWith(newASTNode) {
       return new ViewNodeProxy(source.replaceAST(this.viewNode, newASTNode))
     }
+    appendAST(newASTNode) {
+      return new ViewNodeProxy(source.appendAST(this.viewNode, newASTNode))
+    }
     toRaw() {
       return this.viewNode
     }
@@ -44,6 +47,9 @@ function createViewNodeProxy(source) {
     }
     get nextSibling() {
       return new ViewNodeProxy(source.getNextSibling(this.viewNode))
+    }
+    equal(other) {
+      return this.viewNode === other.toRaw()
     }
     isTypeOf(option) {
       const options = Array.isArray(option) ? option : [option]
@@ -72,7 +78,7 @@ export default class ASTView {
     this.listeners = new CallbackContainer()
 
     // public
-    this.source = new Source(ast, new Generator(), this.view.patch)
+    this.source = new Source(ast, new Generator(), this.view)
     this.selection = new Selection(createViewNodeProxy(this.source))
 
     // setup
@@ -87,6 +93,12 @@ export default class ASTView {
     e.preventDefault()
     e.stopPropagation()
     const range = document.caretRangeFromPoint(e.clientX, e.clientY);
+
+    // TODO 修正选中的内容为最后一个节点的文字。
+    if (range.endContainer.nodeType !== VIEW_NODE_TYPE_TEXT) {
+      const lastText = range.endContainer.childNodes[range.endContainer.childNodes.length - 1]
+      range.setEnd(lastText, lastText.nodeValue.length)
+    }
 
     this.selection.update(range)
   }

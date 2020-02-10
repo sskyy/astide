@@ -5,9 +5,14 @@ import { invariant } from '../../base/util';
 import { VIEW_NODE_TYPE_TEXT } from './constant';
 
 const STATEMENT_LIKE_NAMES = ['statement','declaration', 'specifier', 'definition']
-const EXCLUDE_SEMICOLON_STATEMENT_TYPES = ['BlockStatement', 'IfStatement', 'FunctionDeclaration']
+const EXCLUDE_SEMICOLON_STATEMENT_TYPES = ['BlockStatement', 'IfStatement', 'FunctionDeclaration', 'TryStatement']
 const NODE_SELECTOR = '[node]'
 const KEYWORDS = ["do", "if", "in", "for", "let", "new", "try", "var", "case", "else", "enum", "eval", "null", "this", "true", "void", "with", "await", "break", "catch", "class", "const", "false", "super", "throw", "while", "yield", "delete", "export", "import", "public", "return", "static", "switch", "typeof", "default", "extends", "finally", "package", "private", "continue", "debugger", "function", "arguments", "interface", "protected", "implements", "instanceof"]
+
+function closest(node, selector) {
+  const start = node.nodeType === VIEW_NODE_TYPE_TEXT ? node.parentNode : node
+  return start.closest(selector)
+}
 
 class Storage {
   constructor() {
@@ -63,65 +68,79 @@ function deleteToAncestor(ancestor, start) {
  * viewNode 可以为脏，所以也存在这里。
  */
 export default class Source {
-  constructor(ast, generator, patch) {
+  constructor(ast, generator, view) {
     this.root = ast
     this.generator = generator
-    this.patch = patch
+    this.view = view
     this.nodeRefStorage = new Storage()
     this.nextSiblingChain = new WeakMap()
     this.prevSiblingChain = new WeakMap()
   }
-  linkNode(parent, key, child) {
-    // CAUTION 这是会暴露出去的 api
-    child.replaceWith = (nextChild) => {
-      const isArray = /\[\]$/.test(key)
-      if (isArray) {
-        const rawKey = key.replace(/\[\]$/, '')
-        const collection = parent[rawKey]
-        const prevIndex = collection.indexOf(child)
-        parent[rawKey][prevIndex] = nextChild
-      } else {
-        parent[key] = nextChild
-      }
-
-      // 更新视图
-      const newVNode = this.generate(nextChild)
-      const prevViewNode = this.getViewNode(child)
-      // TODO 通知外部视图更新。这里机制有问题，最后 digest 是外部控制的，但 viewNode 又都是这里处理。
-      // 把 viewNode 当成一个跟外部通信的 token ?
-      const newViewNode = this.patch(prevViewNode, newVNode)
-
-      // 重新建立前后链。
-      const prevSibling = this.getPrevSibling(this.getFirstTextNode(prevViewNode))
-      const nextSibling = this.getNextSibling(this.getLastTextNode(prevViewNode))
-      if (prevSibling) {
-        const nextFirstTextNode = this.getFirstTextNode(newViewNode)
-        this.prevSiblingChain.set(nextFirstTextNode, prevSibling)
-        this.nextSiblingChain.set(prevSibling, nextFirstTextNode)
-      }
-
-      if (nextSibling) {
-        const nextLastTextNode = this.getLastTextNode(newViewNode)
-        this.prevSiblingChain.set(nextSibling, nextLastTextNode)
-        this.nextSiblingChain.set(nextLastTextNode, nextSibling)
-      }
-
-      // 清理缓存
-      delete child.replaceWith
-      this.unlink(child)
-
-      return this.getViewNode(nextChild)
-    }
-  }
   replaceAST(viewNode, nextASTNode) {
     const originAST = this.getASTNode(viewNode)
-    return originAST.replaceWith(nextASTNode)
+    // CAUTION 先执行 generate 再执行 append 才行，append 才会把 nextASTNode 的链接修正
+    const newVNode = this.generate(nextASTNode)
+    originAST.replaceWith(nextASTNode)
+
+    // 更新视图
+    const prevViewNode = this.getViewNode(originAST)
+    // TODO 通知外部视图更新。这里机制有问题，最后 digest 是外部控制的，但 viewNode 又都是这里处理。
+    // 把 viewNode 当成一个跟外部通信的 token ?
+    const newViewNode = this.view.patch(prevViewNode, newVNode)
+
+    // 重新建立前后链。
+    const prevSibling = this.getPrevSibling(this.getFirstTextNode(prevViewNode))
+    const nextSibling = this.getNextSibling(this.getLastTextNode(prevViewNode))
+    if (prevSibling) {
+      const nextFirstTextNode = this.getFirstTextNode(newViewNode)
+      this.prevSiblingChain.set(nextFirstTextNode, prevSibling)
+      this.nextSiblingChain.set(prevSibling, nextFirstTextNode)
+    }
+
+    if (nextSibling) {
+      const nextLastTextNode = this.getLastTextNode(newViewNode)
+      this.prevSiblingChain.set(nextSibling, nextLastTextNode)
+      this.nextSiblingChain.set(nextLastTextNode, nextSibling)
+    }
+
+    // 清理缓存
+    this.unlink(originAST)
+
+    return this.getViewNode(nextASTNode)
+  }
+  appendAST(viewNode, nextASTNode) {
+    const afterAST = this.getASTNode(this.closestStatement(viewNode)).closestInCollection()
+
+    // CAUTION 先执行 generate 再执行 append 才行，append 才会把 nextASTNode 的链接修正
+    const newVNode = this.generate(nextASTNode)
+    afterAST.append(nextASTNode)
+
+    const prevViewNode = this.getViewNode(afterAST)
+    const newViewNode = this.view.append(prevViewNode, newVNode)
+    const prevLastTextNode = this.getLastTextNode(prevViewNode)
+
+    const siblingLastTextNode = this.getLastTextNode(newViewNode)
+    const siblingFirstTextNode = this.getFirstTextNode(newViewNode)
+    // 重新建立前后链。
+    const nextSibling = this.getNextSibling(this.getLastTextNode(prevViewNode))
+    if (nextSibling) {
+      this.prevSiblingChain.set(nextSibling, siblingLastTextNode)
+      this.nextSiblingChain.set(siblingLastTextNode, nextSibling)
+    }
+
+    this.prevSiblingChain.set(siblingFirstTextNode, prevLastTextNode)
+    this.nextSiblingChain.set(prevLastTextNode, siblingFirstTextNode)
+
+    return this.getViewNode(nextASTNode)
   }
   generate(ast = this.root) {
-    return this.generator.generate(ast, (parent, key, node, vnode, isCollection) => {
-      this.linkNode(parent, key, node)
+    return this.generator.generate(ast, ({ applyLink, node, vnode, isCollection }) => {
+      if (isCollection) {
+        vnode.props.isCollection = true
+      } else {
+        applyLink()
+      }
       vnode.props.node = true
-      if (isCollection) vnode.props.isCollection = true
 
       /*
        boundary 怎么办？
@@ -132,9 +151,6 @@ export default class Source {
 
       // 1 node 和 container 会读取 firstTextNode，用于选取某个节点，replace 要用/cmd+a 要用。这里是为 node 处理的。container 会转化为其中第一个元素的 firstTextNode
       // 2 给所有叶子节点连上 nextSibling。tab 跳转要用/stringify 要用/remove 要用。
-
-      // TODO 这里有问题，其实只需要最上面一次统一处理一次就可以了！现在变成了递归处理
-      // TODO 同时没有考虑，移除节点时 firstTextNode 的更新问题
       vnode.ref = (viewNode) => {
         this.nodeRefStorage.save(node, viewNode)
 
@@ -159,13 +175,9 @@ export default class Source {
 
     })
   }
-  replaceASTNode(prevAST, nextAST) {
-
-
-  }
   unlink(node) {
-    this.generator.walk(node, (n) => {
-      this.nodeRefStorage.delete(n)
+    this.generator.walk(node, ({ node: astNode }) => {
+      this.nodeRefStorage.delete(astNode)
     })
   }
   getByViewNode(viewNode) {
@@ -258,13 +270,13 @@ export default class Source {
   }
 
   closestNode(viewNode) {
-    return viewNode.closest(NODE_SELECTOR)
+    return closest(viewNode, NODE_SELECTOR)
   }
   closestNodeOrStatement(viewNode) {
-    return viewNode.closest([NODE_SELECTOR, ...STATEMENT_LIKE_NAMES].join(','))
+    return closest(viewNode, [NODE_SELECTOR, ...STATEMENT_LIKE_NAMES].join(','))
   }
   closestStatement(viewNode) {
-    return viewNode.closest(STATEMENT_LIKE_NAMES.join(','))
+    return closest(viewNode, STATEMENT_LIKE_NAMES.join(','))
   }
   getASTNode(viewNode) {
     return this.nodeRefStorage.getByValue(viewNode)

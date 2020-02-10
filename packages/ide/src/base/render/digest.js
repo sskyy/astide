@@ -55,3 +55,11 @@ export function patch(element, vtree) {
   return newElement
 }
 
+export function append(element, vtree) {
+  const container = createFragment()
+  digest([vtree], container)
+  const newElement = container.childNodes[0]
+  element.after(newElement)
+  return newElement
+}
+

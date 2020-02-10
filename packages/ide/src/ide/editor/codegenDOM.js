@@ -21,7 +21,6 @@ function addSeparatorToChildren(vnode, separator = ',') {
   )
 }
 
-const { stringify } = JSON
 
 const OPERATOR_PRECEDENCE = {
   '||': 3,
@@ -192,18 +191,21 @@ export const baseGenerator = {
     })
   },
   IfStatement(node, state) {
+    const needBoundary = node.consequent.type !== 'BlockStatement' && node.alternate
+    const alternativeNeedBoundary = node.alternate && node.alternate.type !== 'BlockStatement' && node.alternate.type !== 'IfStatement'
+
     return (
       <statement>
         {makeBlock({
           keyword: 'if',
           boundaries: ParenthesisBoundary,
           children: this.render('test'),
-          next: this.render('consequent'),
+          next: needBoundary ? withBoundary(BracketBoundary, this.render('consequent')) : this.render('consequent'),
         })}
         {node.alternate ?
           (<>
             <keyword>else</keyword>
-            {this.render('alternate')}
+            {alternativeNeedBoundary ? withBoundary(BracketBoundary, this.render('alternate')) : this.render('alternate')}
           </>) :
           null
         }
@@ -848,15 +850,6 @@ export const baseGenerator = {
     // console.warn('should not use identifier', node)
     return <identifier>{node.name}</identifier>
   },
-  // Literal(node, state) {
-  //   if (node.raw != null) {
-  //     return <literal>{node.raw}</literal>
-  //   } else if (node.regex != null) {
-  //     return <literal>/${node.regex.pattern}/${node.regex.flags}</literal>
-  //   } else {
-  //     return <literal>{stringify(node.value)}</literal>
-  //   }
-  // },
   BooleanLiteral(node, state) {
     return <literal>{node.value.toString()}</literal>
   },
@@ -900,10 +893,11 @@ export class Generator {
       </container>
     )
 
-    this.companion && this.companion(parent, name, node, vnode, true)
+    this.companion && this.companion({ parent, name, node, vnode, isCollection: true } )
 
     return vnode
   }
+
 
   // CAUTION 所有 renderOne 出来的节点就是 node 节点，是能被整体选中的。同时还会有 firstTextNode/lastTextNode 链接。
   renderOne(node, name, parent) {
@@ -917,16 +911,63 @@ export class Generator {
     }
     const vnodeWithProps = cloneElement(vnode, props)
 
-    this.companion && this.companion(parent, name, node, vnodeWithProps)
+    const applyLink = () => this.linkNode(parent, name, node)
+    this.companion && this.companion({ parent, name, node, vnode: vnodeWithProps, applyLink })
     this.stack.pop()
 
     return vnodeWithProps
   }
 
-  generate(ast, companion) {
+  linkNode(inputParent, inputKey, child) {
+    // CAUTION 这里的 parent/key 一定要从 child 上面取，因为可能是 generate 中传进来的片段， parent/key 是伪造的。
+    // CAUTION 暂时不需要清理，因为child 肯定会被回收。
+    child.parent = inputParent
+    child.keyName = inputKey
+
+    // CAUTION 这是会暴露出去的 api
+    child.closestInCollection = () => {
+      const { keyName: key, parent } = child
+      const normalizedKey = key.replace(/\[\]$/, '')
+      const isArray = Array.isArray(parent[normalizedKey])
+      if (isArray) return child
+      return child.parent.closestInCollection ? child.parent.closestInCollection() : undefined
+    }
+
+    child.replaceWith = (nextChild) => {
+      const { keyName: key, parent } = child
+      const normalizedKey = key.replace(/\[\]$/, '')
+      const isArray = Array.isArray(parent[normalizedKey])
+      if (isArray) {
+        const collection = parent[normalizedKey]
+        const prevIndex = collection.indexOf(child)
+        parent[normalizedKey][prevIndex] = nextChild
+      } else {
+        parent[normalizedKey] = nextChild
+      }
+
+      // 这时会修正 generate 中传进来的片段中作为占位符的 parent/key
+      this.linkNode(parent, key, nextChild)
+    }
+
+    child.append = (sibling) => {
+      const { keyName: key, parent } = child
+      const normalizedKey = key.replace(/\[\]$/, '')
+      const isArray = Array.isArray(parent[normalizedKey])
+      invariant(isArray, `child is not in collection , cannot append: ${key}`)
+
+      const collection = parent[normalizedKey]
+      const prevIndex = collection.indexOf(child)
+      parent[normalizedKey].splice(prevIndex, 1, sibling)
+
+      this.linkNode(parent, key, sibling)
+    }
+  }
+
+    generate(ast, companion) {
     if (this.stack.length ) throw new Error('generator is not ready')
     this.companion = companion
     this.stack.push({ ast })
+    // keyName 可能带 []。这里要 normalize
     const result = this.render('ast')
     this.stack.pop()
     this.companion = null
@@ -934,8 +975,8 @@ export class Generator {
     return result
   }
 
-  walk(companion) {
-    this.generate(companion)
+  walk(node, companion) {
+    this.generate(node, companion)
   }
 
 }
