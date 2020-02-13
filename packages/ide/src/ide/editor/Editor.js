@@ -27,7 +27,7 @@ export default class Editor {
 
     this.view.getDefaultLayer().render(this.astView.render())
     this.view.pushLayer().render(this.inputBoxView.render())
-    this.view.unshiftLayer().render(this.selectionView.render())
+    this.view.unshiftLayer(this.selectionView.render)
 
     // 转化成 selection 的格式
     this.astView.onSelect((selection) => {
@@ -60,13 +60,13 @@ export default class Editor {
     // 这里只处理插入和删除的情况。回车等其他情况在下面
     this.inputBoxView.onChange((e) => {
       // 处理文字、输入法输入，其他都不管
-      EditingStrategies.replace(this.astView, this.parser, e.data)
+      this.astView.batchSelection(() => EditingStrategies.replace(this.astView, this.parser, e.data))
     })
 
     keyCommandStrategies.forEach(({ key, handle}) => {
       // TODO 处理 backspace/tab/cmd+a/cmd+c/cmd+v/cmd+d/cmd+x/cmd+z/cmd+\/
       this.hotkeyManager.on(key, undefined, () => {
-        handle(this.astView, this.parser, this.source)
+        this.astView.batchSelection(() => handle(this.astView, this.parser, this.source))
       })
     })
 

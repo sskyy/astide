@@ -70,7 +70,7 @@ export default [
       if (endOffset < selection.endContainer.nodeValue.length) {
         selection.collapseTo(selection.endContainer, endOffset + 1)
       } else if (selection.endContainer.nextSibling){
-        selection.collapseTo(selection.endContainer.nextSibling, 0)
+        selection.collapseTo(selection.endContainer.nextSibling, 1)
       }
     }
   }, {
@@ -82,7 +82,8 @@ export default [
       if (startOffset > 0 ) {
         selection.collapseTo(selection.startContainer, startOffset - 1)
       } else if (prevSibling){
-        selection.collapseTo(prevSibling, prevSibling.nodeValue.length)
+        // TODO 由于我们的空格是假的，所以这里到底跳到哪个位置有点难判断。
+        selection.collapseTo(prevSibling, prevSibling.nodeValue.length - 1)
       }
     }
   }

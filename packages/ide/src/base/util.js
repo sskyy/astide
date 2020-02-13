@@ -89,7 +89,7 @@ export function cloneDeep(a) {
   return JSON.parse(JSON.stringify(a))
 }
 
-export function mapValue(a, fn) {
+export function mapValues(a, fn) {
   const result = {}
   Object.entries(a).forEach(([key, value]) => {
     result[key] = fn(value, key)

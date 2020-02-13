@@ -53,11 +53,24 @@ export default class Selection {
       }
     })
   }
+  batch(fn) {
+    this.inBatch = true
+    try {
+      fn()
+    } catch(e) {
+      console.error(e)
+    } finally {
+      this.inBatch = false
+      this.callListener()
+    }
+  }
   onChange(listener) {
     this.listeners.add(CHANGE_KEY, listener)
   }
   callListener() {
-    this.listeners.call(CHANGE_KEY)
+    if (!this.inBatch) {
+      this.listeners.call(CHANGE_KEY)
+    }
   }
   update(props) {
     const {

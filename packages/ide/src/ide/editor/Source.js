@@ -7,6 +7,7 @@ import { VIEW_NODE_TYPE_TEXT } from './constant';
 const STATEMENT_LIKE_NAMES = ['statement','declaration', 'specifier', 'definition']
 const EXCLUDE_SEMICOLON_STATEMENT_TYPES = ['BlockStatement', 'IfStatement', 'FunctionDeclaration', 'TryStatement']
 const NODE_SELECTOR = '[node]'
+const CONTAINER_SELECTOR = 'container'
 const KEYWORDS = ["do", "if", "in", "for", "let", "new", "try", "var", "case", "else", "enum", "eval", "null", "this", "true", "void", "with", "await", "break", "catch", "class", "const", "false", "super", "throw", "while", "yield", "delete", "export", "import", "public", "return", "static", "switch", "typeof", "default", "extends", "finally", "package", "private", "continue", "debugger", "function", "arguments", "interface", "protected", "implements", "instanceof"]
 
 function closest(node, selector) {
@@ -272,8 +273,8 @@ export default class Source {
   closestNode(viewNode) {
     return closest(viewNode, NODE_SELECTOR)
   }
-  closestNodeOrStatement(viewNode) {
-    return closest(viewNode, [NODE_SELECTOR, ...STATEMENT_LIKE_NAMES].join(','))
+  closestNodeOrContainer(viewNode) {
+    return closest(viewNode, [NODE_SELECTOR, CONTAINER_SELECTOR, ...STATEMENT_LIKE_NAMES].join(','))
   }
   closestStatement(viewNode) {
     return closest(viewNode, STATEMENT_LIKE_NAMES.join(','))

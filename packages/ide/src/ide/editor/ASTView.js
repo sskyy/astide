@@ -94,13 +94,16 @@ export default class ASTView {
     e.stopPropagation()
     const range = document.caretRangeFromPoint(e.clientX, e.clientY);
 
-    // TODO 修正选中的内容为最后一个节点的文字。
+    // 修正选中的内容为最后一个节点的文字。
     if (range.endContainer.nodeType !== VIEW_NODE_TYPE_TEXT) {
       const lastText = range.endContainer.childNodes[range.endContainer.childNodes.length - 1]
       range.setEnd(lastText, lastText.nodeValue.length)
     }
 
     this.selection.update(range)
+  }
+  batchSelection(fn) {
+    this.selection.batch(fn)
   }
 
   render() {

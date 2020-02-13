@@ -1,4 +1,5 @@
-import DefaultEditor from '../ASTIDEDefaultEditor'
+// CAUTION 目前是通过 single entry component 的方式把组件打包到 iframe 里面。
+import DefaultEditor from 'axii-component-iframe!../ASTIDEDefaultEditor'
 import createRouter from '../base/createRouter'
 import NavigatorViews from './NavigatorViews'
 import StatusBar from '../base/StatusBar'
