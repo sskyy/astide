@@ -20,7 +20,6 @@ const getStyleLoaders = (cssOptions, preProcessor) => {
 const devEnginePath = path.resolve('../../../@ariesate/engine/packages')
 const projectPath = path.resolve(__dirname, '../../')
 
-console.log(path.resolve(projectPath, 'packages/ide/src/base/loaders/iframe-loader.js'))
 
 module.exports = {
   mode: 'development',
@@ -44,7 +43,7 @@ module.exports = {
       title: 'IDE Example',
       chunks: ['ide'],
       filename: 'ide.html',
-      template: 'common-template.html',
+      template: 'ide/ide.html',
     }),
     // new HtmlWebpackPlugin({
     //   title: 'FS Example',

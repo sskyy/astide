@@ -16,39 +16,73 @@ import { createElement, vnodeComputed } from 'axii';
  */
 
 function Directory({ name, path, files, actions, isDirectory }) {
-
   function create() {
     const filename = prompt('file name:')
     actions.create(path, filename)
   }
 
   return (
-    <div>
-      <div>
-        <span>[{name}]</span>
-        <button onClick={create}>+</button>
-      </div>
-      <div style={{paddingLeft: 10}}>
+    <directory block>
+      <info block>
+        <i className="material-icons">folder</i>
+        <name inline inline-margin-left-4px inline-margin-right-4px>{name}</name>
+        <i className="material-icons" onClick={create}>add</i>
+      </info>
+      <children block block-padding-left-10px>
         {vnodeComputed(() => {
           return files.map(file => isDirectory(file) ?
             (<Directory {...file} actions={actions} isDirectory={isDirectory}/>) :
             (<File {...file} actions={actions}/>)
           )
         })}
-      </div>
-    </div>
+      </children>
+    </directory>
   )
+}
+
+Directory.Style = function(style) {
+  const infoStyle = {
+    fontSize: 14,
+    lineHeight: 14,
+    verticalAlign: 'middle'
+  }
+  style.directory = {
+    background: '#1e2130',
+  }
+  style.info = {
+    color: '#ccc',
+  }
+
+  style.name = infoStyle
+  style['i.material-icons'] = infoStyle
 }
 
 function File({ name, status, actions, uri }) {
   // TODO status/remove
   return (
-    <div>
-      <span>{name}</span>
-      <button onClick={() => actions.open(uri)}>open</button>
-      <button onClick={() => actions.remove(uri)}>remove</button>
-    </div>
+    <ifile block>
+      <i className="material-icons">insert_drive_file</i>
+      <name inline inline-margin-left-4px inline-margin-right-4px>{name}</name>
+      <i className="material-icons" onClick={() => actions.open(uri)}>open_in_new</i>
+      <i className="material-icons" onClick={() => actions.remove(uri)}>delete</i>
+    </ifile>
   )
+}
+
+File.Style = function(style) {
+  const infoStyle = {
+    fontSize: 14,
+    lineHeight: 14,
+    verticalAlign: 'middle'
+  }
+  style.ifile = {
+    color: '#fff'
+  }
+  style.name = infoStyle
+  style['i.material-icons'] = {
+    ...infoStyle,
+    cursor: 'pointer'
+  }
 }
 
 

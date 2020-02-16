@@ -39,37 +39,39 @@ export default class Workspace extends Event{
   }
   // TODO close 在这里处理
   get Layout() {
-
-    return ({children}) => {
+    const WorkspaceView = ({children}) => {
       const Editor = children[0]
       invariant(typeof Editor === 'function', 'should pass a editor as children 0')
 
       return (
-        <div>
-          {vnodeComputed(() =>
-            <GridView layout={this.layout}>
-              {Array.from(this.regions.entries(), ([regionName, codePieces]) => {
-                // TODO 先用文字替代，之后改成 workspace 控制
-                return (
-                  <TabContainer GridView:place={regionName} key={regionName} >
-                    {vnodeComputed(() => {
-                      return Array.from(codePieces, (codePiece) =>
-                        <Editor
-                          TabContainer:header={{key: codePiece.uri, content:codePiece.name}}
-                          key={codePiece.uri}
-                          codePiece={codePiece}
-                          ref={this.saveEditorRef}
-                        />
-                      )
-                    })}
-                  </TabContainer>
-                )
-              })}
-            </GridView>
-          )}
-        </div>
+        <workspace block>
+          <GridView layout={this.layout}>
+            {vnodeComputed(() => Array.from(this.regions.entries(), ([regionName, codePieces]) => {
+              // TODO 先用文字替代，之后改成 workspace 控制 header
+              return (
+                <TabContainer GridView:place={regionName} key={regionName} >
+                  {vnodeComputed(() => Array.from(codePieces, (codePiece) =>
+                    <Editor
+                      TabContainer:header={{key: codePiece.uri, content:codePiece.name}}
+                      key={codePiece.uri}
+                      codePiece={codePiece}
+                      ref={this.saveEditorRef}
+                    />)
+                  )}
+                </TabContainer>
+              )
+            }))}
+          </GridView>
+        </workspace>
       )
     }
+    WorkspaceView.Style = WorkspaceStyle
+    return WorkspaceView
   }
+}
 
+function WorkspaceStyle(style) {
+  style.workspace = {
+    background: '#171b30'
+  }
 }

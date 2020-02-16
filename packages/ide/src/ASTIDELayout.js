@@ -16,8 +16,6 @@ import { createElement } from 'axii';
  *  - focusManager
  *  - StatusBar
  *
- * TODO 布局写在哪里？顶层的 GridView 控制的。
- * TODO 样式写在哪里？还没有设计 design system
  *
  * GridView/TabContainer 和业务逻辑无关，当成 util 来提供
  */
@@ -29,14 +27,14 @@ export default function layout({ navigators, EditorRouter, StatusBar, focusManag
   const MainNavigator = navigators.Main
 
   const windowLayout = [
-    ['left', 'right'],
-    ['bottom']
+    [['left', 200], 'right'],
+    [30, 'bottom']
   ]
 
   return (
-    <GridView layout={windowLayout}>
-      <MainNavigator GridView:place="left"/>
-      <Workspace GridView:place="right">
+    <GridView layout={windowLayout} layout:block-height="100%">
+      <MainNavigator GridView:place="left" layout:block-height="100%"/>
+      <Workspace GridView:place="right" layout:block-height="100%">
         {(props) => (
           <EditorRouter
             {...props}
@@ -45,7 +43,7 @@ export default function layout({ navigators, EditorRouter, StatusBar, focusManag
           />
         )}
       </Workspace>
-      <StatusBar GridView:place="bottom"/>
+      <StatusBar GridView:place="bottom" layout:block-height="100%"/>
     </GridView>
   )
 }

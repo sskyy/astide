@@ -26,7 +26,8 @@ function createIframe() {
     script.type = 'text/javascript';
     childDocument.body.appendChild(script);
     appendStyle(childDocument, `
-      body{ 
+      html,body{ 
+        height: 100%;
         margin: 0; 
         padding: 0; 
         overflow-x:visible;
