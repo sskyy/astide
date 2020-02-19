@@ -71,8 +71,8 @@ variable[role="function.id"]{
 base 控制换行的样式
  */
 program * {
-    display: inline-block;
-    vertical-align: top;
+    display: inline;
+    vertical-align: bottom;
     white-space: nowrap;
     line-height: 3ex;
 }
@@ -85,9 +85,6 @@ program statement,declaration {
     display: block;
 }
 
-program expression {
-    display: inline-block;
-}
 
 /*
 flow 的 common
@@ -111,7 +108,10 @@ flow 的 common
 /*
  各个不同的样式覆写
  */
-@import './Declaration.scss';
-@import './Expression.scss';
-@import './Literal.scss';
-@import './Statement.scss';
+@import './Declaration.less';
+@import './Expression.less';
+@import './Literal.less';
+@import './Statement.less';
+@import './Property.less';
+@import './JSX.less';
+@import './Class.less';

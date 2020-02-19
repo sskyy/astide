@@ -25,6 +25,7 @@ export default class Workspace extends Event{
   }
   addCodePiece(codePiece, region='default') {
     this.regions.get(region).add(codePiece)
+    // TODO 设置当前的 tab index。
   }
   saveEditorRef = ({ codePiece, editor }) => {
     // TODO 先这样简单处理
@@ -45,11 +46,11 @@ export default class Workspace extends Event{
 
       return (
         <workspace block>
-          <GridView layout={this.layout}>
+          <GridView layout={this.layout} layout:block-height="100%">
             {vnodeComputed(() => Array.from(this.regions.entries(), ([regionName, codePieces]) => {
               // TODO 先用文字替代，之后改成 workspace 控制 header
               return (
-                <TabContainer GridView:place={regionName} key={regionName} >
+                <TabContainer GridView:place={regionName} key={regionName} layout:block-height="100%" >
                   {vnodeComputed(() => Array.from(codePieces, (codePiece) =>
                     <Editor
                       TabContainer:header={{key: codePiece.uri, content:codePiece.name}}

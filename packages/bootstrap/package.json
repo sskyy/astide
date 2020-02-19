@@ -1,0 +1,48 @@
+{
+  "name": "bootstrap",
+  "version": "1.0.0",
+  "description": "这里面存的是 ASTIDE 自身启动的脚本。 IDE server 需要提供文件输出、数据服务。最好也能提供调试功能。",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@babel/cli": "^7.4.4",
+    "@babel/core": "^7.4.5",
+    "@babel/parser": "^7.7.7",
+    "@babel/plugin-proposal-class-properties": "^7.5.0",
+    "@babel/plugin-transform-react-jsx": "^7.3.0",
+    "@babel/preset-env": "^7.4.5",
+    "@babel/preset-react": "^7.0.0",
+    "babel-loader": "^8.0.6",
+    "classnames": "^2.2.6",
+    "clean-webpack-plugin": "^3.0.0",
+    "command-line-args": "^5.1.1",
+    "css-loader": "^2.1.1",
+    "express": "^4.17.1",
+    "fsevents": "^1.2.9",
+    "html-webpack-plugin": "^3.2.0",
+    "less-loader": "^5.0.0",
+    "lokijs": "^1.5.8",
+    "node-sass": "^4.13.0",
+    "paper": "^0.12.4",
+    "pm2": "^4.2.3",
+    "raw-loader": "^4.0.0",
+    "sass-loader": "^8.0.0",
+    "sequelize": "^5.21.4",
+    "sqlite3": "^4.1.1",
+    "style-loader": "^1.0.1",
+    "webpack": "^4.41.6",
+    "webpack-cli": "^3.3.2"
+  },
+  "devDependencies": {
+    "eslint": "^6.1.0",
+    "eslint-config-airbnb": "^17.1.1",
+    "webpack-dev-server": "^3.4.1"
+  },
+  "resolutions": {
+    "**/fsevents": "^1.2.9"
+  },
+  "author": "",
+  "license": "ISC"
+}

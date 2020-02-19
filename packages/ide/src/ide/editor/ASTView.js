@@ -71,14 +71,12 @@ function createViewNodeProxy(source) {
 const SELECTION_CHANGE = Symbol('selection_change')
 
 export default class ASTView {
-  constructor(view, ast, plugins) {
+  constructor(view, ast, styleManager) {
     this.view = view
-
-    this.plugins = plugins
+    this.styleManager = styleManager
     this.listeners = new CallbackContainer()
-
     // public
-    this.source = new Source(ast, new Generator(), this.view)
+    this.source = new Source(ast, new Generator(), this.view, this.styleManager)
     this.selection = new Selection(createViewNodeProxy(this.source))
 
     // setup

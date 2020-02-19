@@ -7,7 +7,7 @@ const options = {
   allowSuperOutsideMethod: true, // todo
   allowImportExportEverywhere: true, // todo
   sourceType: "module",
-  plugins: []
+  plugins: ['jsx','classProperties']
 }
 
 export default class Parser {

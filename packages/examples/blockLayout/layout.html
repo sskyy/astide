@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+  <style>
+
+#function *{
+    float: left;
+}
+
+#block {
+    clear: both;
+    display: inline-block;
+    margin-left: 10px;
+}
+
+.line{
+    clear: both;
+}
+
+</style>
+
+</head>
+<body>
+
+<div id="function">
+    <span>function</span>
+    <span>()</span>
+    <span>{</span>
+    <span id="block">
+        <span class="line">let a = 1;</span>
+        <span class="line">let b = 2;</span>
+    </span>
+    <span>}</span>
+</div>
+
+<div>
+<declaration data-name="body[]" data-type="VariableDeclaration" node="true">
+    <keyword>const</keyword>
+        <container data-name="declarations" iscollection="true" node="true">
+            <node data-name="declarations[]" data-type="VariableDeclarator" node="true">
+                <variable>writeResult</variable>
+                <operator>=</operator>
+                <expression data-name="init" data-type="CallExpression" node="true">
+                    <expression data-name="callee" data-type="MemberExpression" node="true">
+                        <identifier data-name="object" data-type="Identifier" node="true">fs</identifier>
+                        <operator role="member">.</operator>
+                        <identifier data-name="property" data-type="Identifier" node="true">writeFileSync</identifier>
+                    </expression>
+                <boundary start="true">(</boundary>
+                <container data-name="arguments" iscollection="true" node="true">
+                    <identifier data-name="arguments[]" data-type="Identifier" node="true">virtualPath</identifier>
+                    <separator>,</separator>
+                    <identifier data-name="arguments[]" data-type="Identifier" node="true">entryContent</identifier>
+                </container>
+                <boundary end="true">)</boundary>
+            </expression>
+        </node>
+    </container>
+    <semicolon>;</semicolon>
+</declaration>
+
+<style>
+declaration *{
+    float: left
+}
+</style>
+</div>
+
+</body>
+</html>

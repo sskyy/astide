@@ -55,6 +55,10 @@ export default class IDE {
       })
     })
 
+    this.navigators.on('createCategory', (parentId, name) => {
+      this.codebase.createCategory(parentId, name)
+    })
+
     // TODO 应该进入编辑态才得行。
     this.hotkeyManager.on('cmd+s', defaultState, () => {
       this.codebase.save(this.workspace.getFocusedCodePiece())

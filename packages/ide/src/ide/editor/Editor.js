@@ -1,4 +1,4 @@
-import './format/Editor.scss'
+import './format/Editor.less'
 import View from './View'
 import ASTView from './ASTView'
 import SelectionView from './SelectionView'
@@ -6,15 +6,18 @@ import InputBoxView from './InputBoxView'
 import keyCommandStrategies from './keyCommandStrategies'
 import HotkeyManager from '../../base/HotkeyManager';
 import * as EditingStrategies from './EditingStrategies'
+import StyleManager from './StyleManager'
+import * as defaultStyles from './defaultStyles'
 
 // TODO 还是应该由外部传入 ast。这样更好控制 equal 等。但是还要考虑回退等操作。
 export default class Editor {
-  constructor({ content, parser }) {
+  constructor({ content, parser, styles = defaultStyles }) {
     this.parser = parser
     this.view = new View()
+    this.styleManager = new StyleManager(styles)
 
     // TODO 移到 astView 里面去，没有 domView 的信息，selection 没有意义。
-    this.astView = new ASTView(this.view, this.parser.parse(content))
+    this.astView = new ASTView(this.view, this.parser.parse(content), this.styleManager)
 
     // TODO 如果不主动的话，render 过程也应该写在外面
     this.selectionView = new SelectionView()

@@ -5,12 +5,16 @@ export const propNamespace = 'TabContainer'
 
 export default function TabContainer({children, onClose, activeKey}) {
 
+  const setActiveTab = (index) => {
+    activeKey.value = index
+  }
+
   const headers = vnodeComputed(() => {
     return children.map((child, index) => {
       const { key, content} = child.props[`${propNamespace}:header`]
       return (
         <tabhead inline inline-padding-10px inline-border-bottom-3px key={key} var-active={index===activeKey.value}>
-          <name inline inline-margin-right-4px>{content}</name>
+          <name inline inline-margin-right-4px onClick={() => setActiveTab(index)}>{content}</name>
           <close onClick={() => onClose(key)}>x</close>
         </tabhead>
       )
@@ -26,9 +30,9 @@ export default function TabContainer({children, onClose, activeKey}) {
   }))
 
   return (
-    <block>
+    <block flex-display flex-direction-column>
       <headers block>{headers}</headers>
-      <block>{tabs}</block>
+      <block block-overflow-y-scroll flex-grow-1>{tabs}</block>
     </block>
   )
 }
@@ -51,6 +55,10 @@ TabContainer.Style = (style) => {
     fontSize: 14,
     lineHeight: 14
   }
+  style.name = {
+    cursor: 'pointer'
+  }
+
   style.close = {
     color : '#ccc'
   }

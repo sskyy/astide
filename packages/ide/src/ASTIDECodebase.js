@@ -1,8 +1,8 @@
 /** @jsx createElement */
 import { createElement, reactive, watch } from 'axii';
+import axios from 'axios'
 import TreeView from './base/TreeView'
 import CallbackContainer from './base/CallbackContainer';
-import Dexie from 'dexie';
 
 /*
 codebase 和 navigator 的关系：
@@ -22,88 +22,114 @@ Storage:
  [ name: xxx, files: [] ] 如果没有 files 说明是 directory
 
  */
-
-function addFile(root, {uri, name}) {
-  const path = uri.split('/')
-  // 最后一个是名字
-  path.pop()
-
-  let current = root
-  path.forEach((p, i) => {
-    let dir = current.files.find(f => f.name === p)
-    if (!dir) {
-      dir = { name: p, files: [], path: path.slice(0, i + 1) }
-      current.files.push(dir)
-    }
-    current = dir
-  })
-
-  current.files.push({ uri, name })
-}
-
-function makeTree(files) {
-  const tree = {
-    name: 'root',
-    files: []
+function addFile(cate, file, addingCate) {
+  if ((!addingCate && !file.categoryId) || (addingCate && !file.parentId)) {
+    cate.files.push(file)
+    return true
   }
 
-  files.forEach((file) => {
-    addFile(tree, file)
+
+  cate.files.some((item) => {
+    const isCate = item.files
+    if (!isCate) return false
+    if (item.id === (addingCate ? file.parentId : file.categoryId)) {
+      item.files.push(file)
+      return true
+    }
+
+    return addFile(item, file)
+  })
+}
+
+function makeTree([categories, codes]) {
+  const idToObject = {}
+  const files = []
+
+  categories.forEach((category) => {
+    // 遵循组件要的数据结构
+    category.files = category.codes || []
+    if (!category.parentId) {
+      files.push(category)
+    } else {
+      const parent = idToObject[category.parentId]
+      parent.files.push(category)
+    }
+
+    idToObject[category.id] = category
   })
 
-  return tree
+  codes.forEach(code => {
+    if (idToObject[code.categoryId]) {
+      idToObject[code.categoryId].files.push(code)
+    } else {
+      files.push(code)
+    }
+  })
+
+  return files
 }
 
 export default class Codebase {
-  static isDirectory(item) {
-    return Array.isArray(item.files)
-  }
   static navigators = {
     Main({ codebase, Codebase, ...rest }) {
-      return <TreeView fileRoot={codebase.getFileRoot()} isDirectory={Codebase.isDirectory} {...rest}/>
+      return <TreeView fileRoot={codebase.getFileRoot()} {...rest}/>
     }
     // TODO 其他视图
   }
   constructor() {
     this.watchMap = new CallbackContainer()
-    this.db = new Dexie("code_storage");
-    this.db.version(1).stores({
-      code: 'uri'
-      // code: 'uri,source,isValid'
-    });
-
-    // 这是和 navigator 的约定
+// 这是和 navigator 的约定
     this.fileRoot = reactive({files: []})
 
-    this.loadDBFiles()
+    this.db = {
+      code: axios.create({
+        baseURL: '/db/code/',
+        timeout: 1000
+      }),
+      category: axios.create({
+        baseURL: '/db/category/',
+        timeout: 1000
+      })
+    }
 
+    this.loadDBFiles()
   }
   loadDBFiles() {
-    return this.db.code.toArray(files => this.load(files))
+    this.db.category.get('list').then(({ data }) => this.load( data ))
   }
-  load(flatFiles) {
-    this.db.code.bulkPut(flatFiles)
-    this.fileRoot.files.push(...makeTree(flatFiles).files)
+  load(categoryWithCodes) {
+    // console.log(...makeTree(categoryWithCodes))
+    this.fileRoot.files.push(...makeTree(categoryWithCodes))
   }
   addFile(file) {
     addFile(this.fileRoot, file)
   }
-  // 这是跟 Editor 约定的接口，通过这两个接口来和 workspace 等串联起来。
+  addCategory(category) {
+    addFile(this.fileRoot, category, true)
+  }
+  // 以下是暴露给外部的接口，通过这两个接口来和 workspace 等串联起来。
   get(uri) {
     // TODO 返回一个 proxy 对象，这样就知道哪个数据被使用了？？
-    return this.db.code.get({ uri })
+    return this.db.code.get(`get/${uri}`).then(r => r.data)
   }
+  createCategory(parentId, name) {
+    const newCategory = { name, parentId }
+    return this.db.category.post('create', newCategory).then(({ data: newCategoryWithId }) => this.addCategory(newCategoryWithId))
+  }
+  // 新建
+  create(categoryId, name, content) {
+    const newFile = { categoryId, content, name }
+    return this.db.code.post('create', newFile).then(({ data: newFileWithId }) => this.addFile(newFileWithId))
+  }
+  // 更新
   save(codePiece) {
-    return this.db.code.put(codePiece)
+    return this.db.code.post('save', codePiece)
   }
-
+  remove(uri) {
+    return this.db.code.post('remove', { uri })
+  }
   // 这是和 navigator View 的约定。以后可能有更多
   getFileRoot() {
     return this.fileRoot
-  }
-  create(path = [], name, content) {
-    const newCode = { uri: [...path, name].join('/'), content, name }
-    this.addFile(newCode)
-    return this.db.code.add(newCode).then(() => newCode)
   }
 }

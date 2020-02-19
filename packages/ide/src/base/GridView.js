@@ -26,6 +26,7 @@ export default function GridView({layout, children }) {
           row.splice(0, 1)
         } else {
           heightAttr['flex-grow'] = 1
+          heightAttr['block-overflow-y'] = 'scroll'
         }
         return (
           <row block flex-display {...heightAttr}>

@@ -1,0 +1,30 @@
+[data-type="TryStatement"] {
+  & > [data-type="CatchClause"] {
+    display: inline;
+    margin-left: .5em;
+  }
+}
+
+[data-type="ExpressionStatement"] {
+  //display: inline;
+}
+
+[data-type="IfStatement"] {
+  & > [data-name="consequent"][data-type="ExpressionStatement"] {
+    margin-left: .5em;
+  }
+
+  & > [data-name="consequent"] + keyword {
+    margin-left: 1em;
+  }
+
+  & > [data-name="consequent"] {
+    margin-left: 1em;
+  }
+
+
+  & > [data-name="alternate"][data-type="IfStatement"] {
+    display: inline;
+  }
+
+}

@@ -1,0 +1,120 @@
+editor {
+    position: relative;
+    background: #282a36;
+    display: block;
+}
+
+/**
+common inline 中的样式
+ */
+program {
+    z-index: 100;
+    position: relative;
+    display: block;
+    padding: 0;
+    margin: 0;
+    color: #fff;
+    font-size: 14px;
+    letter-spacing: .1em;
+    font-family: "monospace";
+    cursor: text;
+}
+
+keyword {
+    color: #bd93f9;
+    font-style: italic;
+    & + * {
+        margin-left: .5em;
+    }
+}
+
+
+boundary {
+    color: #8be9fd	;
+    //visibility: hidden;
+}
+
+
+// TODO 各种不同 operator
+operator{
+    margin: 0 .5em;
+    color: #8be9fd	;
+}
+
+operator[role="member"]{
+    margin: 0
+}
+
+separator + * {
+    margin-left: .5em;
+}
+
+function {
+    color: #1d84f0;
+}
+
+variable {
+    color: #f6f9d9;
+}
+
+// 参数
+identifier {
+    color: #ffb66a;
+}
+
+variable[role="callee"],
+variable[role="function.id"]{
+    color: #1d84f0;
+}
+
+/**
+base 控制换行的样式
+ */
+program * {
+    display: inline-block;
+    vertical-align: top;
+    white-space: nowrap;
+    line-height: 3ex;
+}
+
+program > container {
+    display: block;
+}
+
+program statement,declaration {
+    display: block;
+}
+
+program expression {
+    display: inline-block;
+}
+
+/*
+flow 的 common
+ */
+// 为了让 boundary inline
+[data-type="BlockStatement"] {
+    display: inline;
+    & > boundary[start] {
+        margin-right: 0;
+    }
+    & > boundary[end] {
+        margin-left: 0;
+    }
+    & > [data-name="body"] {
+        display: block;
+        margin-left: 1em
+    }
+}
+
+
+/*
+ 各个不同的样式覆写
+ */
+@import './Declaration.less';
+@import './Expression.less';
+@import './Literal.less';
+@import './Statement.less';
+@import './Property.less';
+@import './JSX.less';
+@import './Class.less';

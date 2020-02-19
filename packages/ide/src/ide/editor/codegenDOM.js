@@ -151,6 +151,9 @@ function hasCallExpression(node) {
 const ParenthesisBoundary = ['(', ')']
 const BracketBoundary = ['{', '}']
 const SquareBracketBoundary = ['[', ']']
+const JSXOpeningBoundary = ['<', '>']
+const JSXSelfClosingBoundary = ['<', '/>']
+const JSXClosingBoundary = ['</', '>']
 
 // 为了复用
 let ForInStatement,
@@ -158,7 +161,8 @@ let ForInStatement,
   RestElement,
   BinaryExpression,
   ArrayExpression,
-  BlockStatement
+  BlockStatement,
+  MethodDefinition
 
 export const baseGenerator = {
   Program(node, state) {
@@ -174,7 +178,55 @@ export const baseGenerator = {
       children: this.render('body')
     })
   }),
-  ClassBody: BlockStatement,
+  ClassBody(node) {
+    return <node>
+      {this.render('body')}
+    </node>
+  },
+  ClassProperty(node) {
+    return (
+      <node>
+        {node.static ? <keyword>static</keyword> : null}
+        {node.computed ? withBoundary(SquareBracketBoundary, this.render('key')) : this.render('key')}
+        <operator>=</operator>
+        {this.render('value')}
+      </node>
+    )
+  },
+  MethodDefinition: (MethodDefinition = function(node, state) {
+    return (
+      <definition>
+        {node.static ? <keyword>static</keyword> : null}
+        {node.kind === 'get' ? <keyword>get</keyword> : null}
+        {node.kind === 'set' ? <keyword>set</keyword> : null}
+        {node.value.async ? <keyword>async</keyword> : null}
+        {node.value.generator ? <keyword>*</keyword> : null}
+        {node.computed ? makeBlock({
+          boundaries: SquareBracketBoundary,
+          children: this.render('key')
+        }) : this.render('key')}
+        {this.render('params')}
+        {this.render('value')}
+      </definition>
+    )
+  }),
+  ClassMethod(node) {
+    return (
+      <definition>
+        {node.static ? <keyword>static</keyword> : null}
+        {node.kind === 'get' ? <keyword>get</keyword> : null}
+        {node.kind === 'set' ? <keyword>set</keyword> : null}
+        {node.async ? <keyword>async</keyword> : null}
+        {node.generator ? <keyword>*</keyword> : null}
+        {node.computed ? makeBlock({
+          boundaries: SquareBracketBoundary,
+          children: this.render('key')
+        }) : this.render('key')}
+        {withBoundary(ParenthesisBoundary, this.render('params'))}
+        {this.render('body')}
+      </definition>
+    )
+  },
   EmptyStatement(node, state) {
     return <statement></statement>
   },
@@ -494,19 +546,21 @@ export const baseGenerator = {
       </declaration>
     )
   },
-  MethodDefinition(node, state) {
+
+  ObjectMethod(node){
     return (
       <definition>
-        {node.static ? <keyword>static</keyword> : null}
         {node.kind === 'get' ? <keyword>get</keyword> : null}
         {node.kind === 'set' ? <keyword>set</keyword> : null}
-        {node.value.async ? <keyword>async</keyword> : null}
-        {node.value.generator ? <keyword>*</keyword> : null}
         {node.computed ? makeBlock({
           boundaries: SquareBracketBoundary,
           children: this.render('key')
         }) : this.render('key')}
-        {this.render('value')}
+        {makeBlock({
+          boundaries: ParenthesisBoundary,
+          children: addSeparatorToChildren(this.render('params'), ',')
+        })}
+        {this.render('body')}
       </definition>
     )
   },
@@ -514,6 +568,7 @@ export const baseGenerator = {
     return (
       <expression>
         {makeBlock({
+          keyword: 'function',
           boundaries: ParenthesisBoundary,
           children: addSeparatorToChildren(this.render('params'), ','),
           next: this.render('body')
@@ -663,6 +718,15 @@ export const baseGenerator = {
       </node>
     )
 
+  },
+  ObjectProperty(node) {
+    return (
+      <node>
+        {this.render('key')}
+        <separator>:</separator>
+        {this.render('value')}
+      </node>
+    )
   },
   ObjectPattern(node, state) {
     return (
@@ -867,6 +931,80 @@ export const baseGenerator = {
   },
   File() {
     return this.render('program')
+  },
+  //jsx related
+  JSXElement(node) {
+    return (
+      <node>
+        {this.render('openingElement')}
+        {node.closingElment ? this.render('closingElement'): null}
+      </node>
+    )
+  },
+  JSXOpeningElement(node) {
+    return (
+      <node>
+        {withBoundary(node.selfClosing ? JSXSelfClosingBoundary : JSXOpeningBoundary,
+          <>
+            {this.render('name')}
+            {this.render('attributes')}
+          </>
+        )}
+      </node>
+    )
+  },
+  JSXIdentifier(node) {
+    return <identifier>{node.name}</identifier>
+  },
+  JSXClosingElement(node) {
+    return (
+      <node>
+        {withBoundary(JSXClosingBoundary,
+          this.render('name'))}
+      </node>
+    )
+  },
+  JSXSpreadAttribute(node) {
+    return (
+      <node>
+        {withBoundary(BracketBoundary,
+          <>
+            <operator>...</operator>
+            {this.render('argument')}
+          </>
+        )}
+      </node>
+    )
+  },
+  JSXAttribute(node) {
+    return (
+      <node>
+        {this.render('name')}
+        {node.value!==null ? <operator>=</operator> : null}
+        {node.value!==null ? this.render('value'): null}
+      </node>
+    )
+  },
+  JSXExpressionContainer(node) {
+    return <node>
+      {withBoundary(BracketBoundary, this.render('expression'))}
+    </node>
+  },
+  JSXFragment(node) {
+    return <node>
+      {this.render('openingFragment')}
+      {this.render('children')}
+      {node.closingFragment ? this.render('closingFragment') : null}
+    </node>
+  },
+  JSXOpeningFragment() {
+    return <node>{withBoundary(JSXOpeningBoundary, null)}</node>
+  },
+  JSXClosingFragment() {
+    return <node>{withBoundary(JSXClosingBoundary, null)}</node>
+  },
+  JSXText(node) {
+    return <literal>{node.value}</literal>
   }
 }
 
@@ -902,7 +1040,10 @@ export class Generator {
   // CAUTION 所有 renderOne 出来的节点就是 node 节点，是能被整体选中的。同时还会有 firstTextNode/lastTextNode 链接。
   renderOne(node, name, parent) {
     this.stack.push(node)
-    if (!this.generator[node.type]) throw new Error(`unknown node type ${node.type}`)
+    if (!this.generator[node.type]) {
+      throw new Error(`unknown node type ${node.type}`)
+    }
+    invariant(this.generator[node.type], `unknown node type ${node.type}`)
     const vnode = this.generator[node.type].call(this, node)
     invariant(vnode.type !== Fragment, 'vnode should not be fragment')
     const props = {

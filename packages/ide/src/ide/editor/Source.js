@@ -69,13 +69,14 @@ function deleteToAncestor(ancestor, start) {
  * viewNode 可以为脏，所以也存在这里。
  */
 export default class Source {
-  constructor(ast, generator, view) {
+  constructor(ast, generator, view, styleManager) {
     this.root = ast
     this.generator = generator
     this.view = view
     this.nodeRefStorage = new Storage()
     this.nextSiblingChain = new WeakMap()
     this.prevSiblingChain = new WeakMap()
+    this.styleManager = styleManager
   }
   replaceAST(viewNode, nextASTNode) {
     const originAST = this.getASTNode(viewNode)
@@ -106,7 +107,7 @@ export default class Source {
 
     // 清理缓存
     this.unlink(originAST)
-
+    this.styleManager.apply(newViewNode)
     return this.getViewNode(nextASTNode)
   }
   appendAST(viewNode, nextASTNode) {
@@ -132,6 +133,7 @@ export default class Source {
     this.prevSiblingChain.set(siblingFirstTextNode, prevLastTextNode)
     this.nextSiblingChain.set(prevLastTextNode, siblingFirstTextNode)
 
+    this.styleManager.apply(newViewNode)
     return this.getViewNode(nextASTNode)
   }
   generate(ast = this.root) {
@@ -169,9 +171,12 @@ export default class Source {
       // 给所有 statement like 节点加上分号
       if (STATEMENT_LIKE_NAMES.includes(vnode.type) && !EXCLUDE_SEMICOLON_STATEMENT_TYPES.includes(node.type)) {
         // TODO 还要去掉所有有大括号的组合形式
-        if (!(node.type === 'ExportNamedDeclaration' && node.declaration.type === 'FunctionDeclaration')) {
+        if (!(node.type === 'ExportNamedDeclaration' && node.declaration.type === 'FunctionDeclaration')
+          && node.type !== 'ClassMethod'
+        ) {
           vnode.children.push(<semicolon>;</semicolon>)
         }
+        // TODO classMethod 后面加, 而不是分号。
       }
 
     })

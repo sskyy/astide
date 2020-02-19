@@ -1,7 +1,6 @@
 const path = require('path')
 const webpack = require('webpack')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 const getStyleLoaders = (cssOptions, preProcessor) => {
   const loaders = [
@@ -24,52 +23,16 @@ const projectPath = path.resolve(__dirname, '../../')
 module.exports = {
   mode: 'development',
   entry: {
-    editor: './editor/editor.js',
-    // ide: './ide/ide.js',
-    // fs: './fs/fs.js',
-    // paper: './paper/paper.js',
-    // iframe: './iframe/iframe.js',
-    layout: './blockLayout/layout.js',
+    ide: './ide.js',
   },
   devtool: 'inline-source-map',
   plugins: [
-    new CleanWebpackPlugin(),
-    // new HtmlWebpackPlugin({
-    //     title: 'layout Example',
-    //     chunks: ['layout'],
-    //     filename: 'layout.html',
-    //     template: './blockLayout/layout.html',
-    //   }),
     new HtmlWebpackPlugin({
-      title: 'Editor Example',
-      chunks: ['editor'],
-      filename: 'editor.html',
-      template: './editor/editor.html',
+      title: 'IDE Example',
+      chunks: ['ide'],
+      filename: 'ide.html',
+      template: 'ide.html',
     }),
-    // new HtmlWebpackPlugin({
-    //   title: 'IDE Example',
-    //   chunks: ['ide'],
-    //   filename: 'ide.html',
-    //   template: 'ide/ide.html',
-    // }),
-    // new HtmlWebpackPlugin({
-    //   title: 'FS Example',
-    //   chunks: ['fs'],
-    //   filename: 'fs.html',
-    //   template: 'common-template.html',
-    // }),
-    // new HtmlWebpackPlugin({
-    //   title: 'Paper Example',
-    //   chunks: ['paper'],
-    //   filename: 'paper.html',
-    //   template: './paper/paper.html',
-    // }),
-    // new HtmlWebpackPlugin({
-    //   title: 'iframe Example',
-    //   chunks: ['iframe'],
-    //   filename: 'iframe.html',
-    //   template: './iframe/iframe.html',
-    // }),
     new webpack.DefinePlugin({
       __DEV__: true,
     })
@@ -77,6 +40,7 @@ module.exports = {
   output: {
     filename: '[name].bundle.js',
     path: path.resolve(__dirname, 'dist'),
+    publicPath: '/page/'
   },
   module: {
     rules: [
@@ -93,17 +57,12 @@ module.exports = {
       },
       { test: /\.css$/, use: ['style-loader', 'css-loader'] },
       {
-        test: /\.(scss|sass)$/,
-        use: getStyleLoaders({
-          importLoaders: 1,
-        }, 'sass-loader'),
-      },
-      {
         test: /\.less$/,
         use: getStyleLoaders({
           importLoaders: 1,
         }, 'less-loader'),
       },
+
     ],
   },
   resolve: {

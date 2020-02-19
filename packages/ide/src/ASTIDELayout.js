@@ -27,13 +27,14 @@ export default function layout({ navigators, EditorRouter, StatusBar, focusManag
   const MainNavigator = navigators.Main
 
   const windowLayout = [
+    [30, 'top'],
     [['left', 200], 'right'],
     [30, 'bottom']
   ]
 
   return (
     <GridView layout={windowLayout} layout:block-height="100%">
-      <MainNavigator GridView:place="left" layout:block-height="100%"/>
+      <MainNavigator GridView:place="left" layout:block-height="100%" layout:block-overflow-x-scroll/>
       <Workspace GridView:place="right" layout:block-height="100%">
         {(props) => (
           <EditorRouter
