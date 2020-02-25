@@ -23,9 +23,6 @@ program {
 keyword {
     color: #bd93f9;
     font-style: italic;
-    & + * {
-        margin-left: .5em;
-    }
 }
 
 
@@ -72,46 +69,42 @@ base 控制换行的样式
  */
 program * {
     display: inline;
-    vertical-align: bottom;
+    vertical-align: top;
     white-space: nowrap;
     line-height: 3ex;
 }
 
-program > container {
-    display: block;
-}
-
-program statement,declaration {
-    display: block;
-}
 
 
 /*
-flow 的 common
- */
-// 为了让 boundary inline
-[data-type="BlockStatement"] {
-    display: inline;
-    & > boundary[start] {
-        margin-right: 0;
+Expression
+*/
+[data-type="ThisExpression"] variable {
+    color: #f91825;
+}
+
+[data-type="AssignmentExpression"] operator {
+    color: #8be9fd;
+}
+
+[data-type="CallExpression"] {
+
+    & > container[data-name="arguments"] {
     }
-    & > boundary[end] {
-        margin-left: 0;
-    }
-    & > [data-name="body"] {
-        display: block;
-        margin-left: 1em
+
+    & > [data-type="MemberExpression"] {
+        & > identifier[data-name="property"] {
+            color: #677af0;
+        }
     }
 }
 
+[data-type="MemberExpression"] {
+    & > identifier[data-name="property"] {
+        color: #ffffff;
+    }
 
-/*
- 各个不同的样式覆写
- */
-@import './Declaration.less';
-@import './Expression.less';
-@import './Literal.less';
-@import './Statement.less';
-@import './Property.less';
-@import './JSX.less';
-@import './Class.less';
+    & > variable {
+        color: #ffb66a;
+    }
+}

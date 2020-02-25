@@ -5,7 +5,8 @@
  */
 
 import * as EditingStrategies from './EditingStrategies'
-import { remove, makeNewStatement } from './EditingStrategies';
+import { remove } from './EditingStrategies';
+import { expandSelectionToNode, makeNewStatement } from './util';
 const literalLikeNode = ['literal', 'variable', 'identifier']
 
 export default [
@@ -18,31 +19,67 @@ export default [
       while(next && !next.isTypeOf(literalLikeNode)) {
         next = next.nextSibling
       }
-      selection.collapseTo(next, 0)
+      selection.collapseTo(next, next.nodeValue.length)
     }
   },{
     key: 'cmd+a',
     handle(astView) {
+      const { selection, source } = astView
+      /**
+       * 选区扩大策略：
+       * 1. 如果不是 full selection，那么就先填满当前选区。
+       *   full selection 定义：
+       *   startContainer 是 startAncestor 的第一个，startOffset 为 0.
+       *   endContainer 是 endAncestor 最后一个, endOffset 为 nodeValue.length。
+       * 2. 如果是 full selection 那么就扩大到 parent node 或者 collection。
+       *
+       * 是否是 crossedNodes 算法都一样。
+       */
+      const [ancestor, startAncestor, endAncestor] = source.findCommonAncestorNode(selection.startContainer, selection.endContainer)
+      const isAtNodeStart = selection.startOffset === 0 && selection.startContainer.equal(startAncestor.firstTextViewNode)
+      const isAtNodeEnd = (selection.endOffset === selection.endContainer.nodeValue.length) && selection.endContainer.equal(endAncestor.lastTextViewNode)
+      // 头尾已满，考虑往上扩大了。
+      if (isAtNodeEnd && isAtNodeStart) {
+        if (Array.isArray(ancestor)) {
+          // 是否 collection 已经选满了
+          if (ancestor[0].equal(startAncestor) && ancestor[ancestor.length -1].equal(endAncestor)) {
+            // collection 已选满，通常表示当前这个这节点都已经选满了。
+            // TODO 不确定一个 node 会不会同时有 collection 节点和其他节点，还要判断
+            const parentNode = ancestor.parent.parent
+            if (parentNode) {
+              expandSelectionToNode(selection, parentNode)
+            }
+            console.log('full ', parentNode)
+          } else {
+            // 没选满，继续选满 collection
+            console.log('not full ', ancestor[0] === startAncestor, ancestor[ancestor.length -1] === endAncestor)
+            console.log(ancestor, startAncestor, endAncestor)
+            expandSelectionToNode(selection, ancestor)
+          }
 
-      const { selection } = astView
-
-      // 当前选区在一个单词之内。选取的扩大需求，选中当前单词
-      if (!selection.crossedNodes()
-        && (selection.endOffset - selection.startOffset) < selection.startContainer.nodeValue.length
-      ){
-          // 仅扩大到当前整个区域
-          selection.startOffset = 0
-          selection.endOffset = selection.endContainer.nodeValue.length
+        } else {
+          // 选择 parent 节点
+          /**
+           * TODO parent 可能是个节点，也可能是 collection。如果是 collection。可能会出现 collection 就只有当前这个节点的情况。
+           * 要一直往上找到包含其他节点的祖先。
+           */
+          console.log(ancestor)
+          if (Array.isArray(ancestor.parent) && ancestor.parent.length !== 1) {
+            expandSelectionToNode(selection, ancestor.parent)
+          } else {
+            expandSelectionToNode(selection, ancestor.parent.parent)
+          }
+        }
       } else {
-        // 如果选区未满，就填满选区，如果选区满了，就向上扩大
-        // TODO 向上的过程中还有问题。比如collection 中只有一个元素，就会出现往上扩大了但看不出效果的情况。
-        const excludeSelf = selection.isFullSelection()
-        const viewNode = selection.closestNodeOrContainer(excludeSelf)
-        selection.startContainer = viewNode.firstTextNode
-        selection.startOffset = 0
-        selection.endContainer = viewNode.lastTextNode
-        selection.endOffset = viewNode.lastTextNode.nodeValue.length
-
+        // 头尾都没满，选处理头尾
+        if (!isAtNodeStart) {
+          selection.startContainer = startAncestor.firstTextViewNode
+          selection.startOffset = 0
+        }
+        if (!isAtNodeEnd) {
+          selection.endContainer = endAncestor.lastTextViewNode
+          selection.endOffset = endAncestor.lastTextViewNode.nodeValue.length
+        }
       }
     }
   }, {
@@ -52,15 +89,14 @@ export default [
     }
   }, {
     key: 'enter',
-    handle(astView, parser, source) {
+    handle(astView, parser) {
       // TODO enter 补全/新建 statement
       const { selection } = astView
-      const lastTextNode = selection.closestStatement().lastTextNode
-      selection.collapseTo(lastTextNode, lastTextNode.nodeValue.length)
-      makeNewStatement(selection, source, parser, ';')
+      const lastTextViewNode = selection.closestStatement().lastTextViewNode
+      selection.collapseTo(lastTextViewNode, lastTextViewNode.nodeValue.length)
+      makeNewStatement(selection, parser, ';', selection.isAtStatementStart())
       // makeNewStatement 会把 selection 移到尾部，我们这里要移到开头
       selection.collapseTo(selection.endContainer, 0)
-
     }
   } , {
     key: 'right',

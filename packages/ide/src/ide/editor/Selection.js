@@ -7,14 +7,13 @@ function closest(viewNode, selector) {
   return start.closest(selector)
 }
 
-
-
 const CHANGE_KEY = Symbol('change')
 
+
 export default class Selection {
-  constructor(ViewNodeProxy) {
+  constructor(source) {
     this.listeners = new CallbackContainer()
-    this.ViewNodeProxy = ViewNodeProxy
+    this.source = source
     // TODO 利用 range 对象帮忙找共同根、getBoundingClientRect
     this.range = document.createRange();
 
@@ -24,10 +23,10 @@ export default class Selection {
     ]).forEach(([containerName, offsetName, method]) => {
       Object.defineProperty(this, containerName, {
         get: () => {
-          return new ViewNodeProxy(this.range[containerName])
+          // TODO 这里怎么会知道 proxy
+          return this.source.createViewNodeProxy(this.range[containerName], this.source)
         },
         set: (viewNodeProxy) => {
-          invariant(viewNodeProxy instanceof ViewNodeProxy, `${containerName} set value must be a viewNodeProxy`)
           this.range[method](viewNodeProxy.toRaw(), 0)
           this.callListener()
         }
@@ -44,14 +43,6 @@ export default class Selection {
       })
     });
 
-    // 委托给 ViewNodeProxy 的方法
-    const proxyMethods = ['closestNode', 'closestNodeOrContainer', 'closestStatement']
-    proxyMethods.forEach(methodName => {
-      this[methodName] = (excludeSelf) => {
-        const proxy = new ViewNodeProxy(this.getSearchStartNode(excludeSelf))
-        return proxy[methodName]()
-      }
-    })
   }
   batch(fn) {
     this.inBatch = true
@@ -89,6 +80,10 @@ export default class Selection {
     this.range.setEnd(viewNode, offset)
     this.callListener()
   }
+  closestStatement() {
+    const [ancestor] =  this.source.findCommonAncestorNode(this.startContainer, this.endContainer)
+    return ancestor.closestStatement()
+  }
   getRect() {
     // TODO cache?
     // TODO 鼠标滑词选中？
@@ -112,22 +107,6 @@ export default class Selection {
       height,
     }
   }
-  isFullSelection() {
-    if (!(this.range.startOffset ===  0 && this.range.endOffset === this.range.endContainer.nodeValue.length)) return false
-    if (!this.crossedNodes()) return true
-
-    const ViewNodeProxy = this.ViewNodeProxy
-    const commonAncestorContainer = new ViewNodeProxy(this.range.commonAncestorContainer)
-    return commonAncestorContainer.isNode()
-  }
-  getSearchStartNode(excludeSelf) {
-    // normalize textNode 类型的 start。这是因为 textNode 没有 closest 方法造成的。
-    const normalized = (this.range.commonAncestorContainer === this.range.startContainer) ?
-      this.range.startContainer.parentNode :
-      this.range.commonAncestorContainer
-
-    return excludeSelf ? normalized.parentNode : normalized
-  }
   crossedNodes() {
     return this.range.startContainer !== this.range.endContainer
   }
@@ -140,8 +119,21 @@ export default class Selection {
     // 性能高的新判断
     if (!this.collapsed()) return false
     if (this.endOffset !== this.range.endContainer.nodeValue.length) return false
-    return this.closestStatement().lastTextNode.equal(this.endContainer)
+    return this.closestStatement().lastTextViewNode.equal(this.endContainer)
+  }
+  isAtStatementStart() {
+    if (!this.collapsed()) return false
+    return this.startOffset === 0
+  }
+  dirtyPatchViewNode(content) {
+    return this.source.dirtyPatchViewNode(this, content)
   }
 
+  // delegate 到 source 上的
 
 }
+
+/* 0. selection closestStatement 返回值为 ast。
+ * 6. selection.closestNodeOrContainer() 返回值为 ast。
+ * 9. selection delegate dirtyPatchViewNode(content)
+ */

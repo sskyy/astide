@@ -1,3 +1,6 @@
+import Fragment from '../../base/render/Fragment';
+import createElement from '../../base/render/createElement';
+
 function createLayoutProxy() {
   const blockSelectors = []
 
@@ -24,19 +27,29 @@ function createLayoutProxy() {
 export default class StyleManager {
   constructor(rules) {
     this.rules = rules
-    this.dynamicStyles = {}
-    // this.initialize()
+    const style = document.createElement('style')
+    document.head.appendChild(style)
+    this.sheet = style.sheet
+    this.initialize()
+  }
+  createStyleRule(rule) {
+    this.sheet.insertRule(rule)
   }
   initialize() {
-    const layoutProxy = createLayoutProxy()
-    this.rules.layout(layoutProxy)
-    // 得到所有 block
-    const blockSelectors = layoutProxy.getBlockSelectors()
-    this.attachStaticBlocks(blockSelectors)
+    this.createStyleRule('[block] { display: block; padding-left: 2em }')
   }
-  apply(viewNode, source) {
-    // TODO 开始跑
-    // this.dynamicStyles
+  hijack(node, vnode, source) {
+    const shouldBeBlock = this.rules.layout(node, vnode, source)
+    let toReturn = vnode
+    if (shouldBeBlock) {
+      if (vnode.type === Fragment) {
+        toReturn = createElement(node.type.toLowerCase(), { block: true }, ...vnode.children)
+      } else {
+        vnode.attributes.block = true
+      }
+    }
+
+    return toReturn
   }
 
 }

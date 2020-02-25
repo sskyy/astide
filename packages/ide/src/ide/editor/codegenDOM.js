@@ -3,21 +3,22 @@
 import createElement, { cloneElement } from '../../base/render/createElement'
 import Fragment from '../../base/render/Fragment'
 import {
-  makeStatement,
   makeBlock,
   withBoundary,
-  withSeparator, makeDeclaration
+  withSeparator,
+  makeKeyword,
 } from '../../base/render/components'
 import { invariant } from '../../base/util';
 
+/**
+ * TODO
+ * 1. 加上分号
+ * 2. 加上逗号
+ * 3. 加上空格
+ */
 function addSeparatorToChildren(vnode, separator = ',') {
-  // return cloneElement(vnode, {}, ...withSeparator(vnode.children, <separator>{separator}</separator>))
   return cloneElement(vnode, {},
-    cloneElement(
-      vnode.children[0],
-      {},
-      ...withSeparator(vnode.children[0].children, separator)
-    )
+    ...withSeparator(vnode.children[0].children, separator)
   )
 }
 
@@ -173,33 +174,33 @@ export const baseGenerator = {
     )
   },
   BlockStatement: (BlockStatement = function (node, state) {
-    return makeStatement({
+    return makeBlock({
       boundaries: BracketBoundary,
       children: this.render('body')
     })
   }),
   ClassBody(node) {
-    return <node>
+    return <>
       {this.render('body')}
-    </node>
+    </>
   },
   ClassProperty(node) {
     return (
-      <node>
-        {node.static ? <keyword>static</keyword> : null}
+      <>
+        {node.static ? makeKeyword('static') : null}
         {node.computed ? withBoundary(SquareBracketBoundary, this.render('key')) : this.render('key')}
         <operator>=</operator>
         {this.render('value')}
-      </node>
+      </>
     )
   },
   MethodDefinition: (MethodDefinition = function(node, state) {
     return (
-      <definition>
-        {node.static ? <keyword>static</keyword> : null}
-        {node.kind === 'get' ? <keyword>get</keyword> : null}
-        {node.kind === 'set' ? <keyword>set</keyword> : null}
-        {node.value.async ? <keyword>async</keyword> : null}
+      <>
+        {node.static ? makeKeyword('static') : null}
+        {node.kind === 'get' ? makeKeyword('get') : null}
+        {node.kind === 'set' ? makeKeyword('set') : null}
+        {node.value.async ? makeKeyword('async') : null}
         {node.value.generator ? <keyword>*</keyword> : null}
         {node.computed ? makeBlock({
           boundaries: SquareBracketBoundary,
@@ -207,16 +208,16 @@ export const baseGenerator = {
         }) : this.render('key')}
         {this.render('params')}
         {this.render('value')}
-      </definition>
+      </>
     )
   }),
   ClassMethod(node) {
     return (
-      <definition>
-        {node.static ? <keyword>static</keyword> : null}
-        {node.kind === 'get' ? <keyword>get</keyword> : null}
-        {node.kind === 'set' ? <keyword>set</keyword> : null}
-        {node.async ? <keyword>async</keyword> : null}
+      <>
+        {node.static ? makeKeyword('static') : null}
+        {node.kind === 'get' ? makeKeyword('get') : null}
+        {node.kind === 'set' ? makeKeyword('set') : null}
+        {node.async ? makeKeyword('async') : null}
         {node.generator ? <keyword>*</keyword> : null}
         {node.computed ? makeBlock({
           boundaries: SquareBracketBoundary,
@@ -224,11 +225,11 @@ export const baseGenerator = {
         }) : this.render('key')}
         {withBoundary(ParenthesisBoundary, this.render('params'))}
         {this.render('body')}
-      </definition>
+      </>
     )
   },
   EmptyStatement(node, state) {
-    return <statement></statement>
+    return <statement><semicolon>;</semicolon></statement>
   },
   ExpressionStatement(node, state) {
     const precedence = EXPRESSIONS_PRECEDENCE[node.expression.type]
@@ -237,9 +238,10 @@ export const baseGenerator = {
       (precedence === 3 && node.expression.left.type[0] === 'O')
     ) ? ParenthesisBoundary : null
 
-    return makeStatement({
+    return makeBlock({
       boundaries,
-      children: this.render('expression')
+      children: this.render('expression'),
+      semicolon: true,
     })
   },
   IfStatement(node, state) {
@@ -247,7 +249,7 @@ export const baseGenerator = {
     const alternativeNeedBoundary = node.alternate && node.alternate.type !== 'BlockStatement' && node.alternate.type !== 'IfStatement'
 
     return (
-      <statement>
+      <>
         {makeBlock({
           keyword: 'if',
           boundaries: ParenthesisBoundary,
@@ -256,41 +258,43 @@ export const baseGenerator = {
         })}
         {node.alternate ?
           (<>
-            <keyword>else</keyword>
+            {makeKeyword('else')}
             {alternativeNeedBoundary ? withBoundary(BracketBoundary, this.render('alternate')) : this.render('alternate')}
           </>) :
           null
         }
-      </statement>
+      </>
     )
   },
   LabeledStatement(node, state) {
     return (
-      <statement>
+      <>
         {this.render('label')}
         <separator>:</separator>
         {this.render('body')}
-      </statement>
+      </>
     )
   },
   BreakStatement(node, state) {
     return (
-      <statement>
-        <keyword>break</keyword>
+      <>
+        {makeKeyword('break')}
         {this.render('label')}
-      </statement>
+        <semicolon>;</semicolon>
+      </>
     )
   },
   ContinueStatement(node, state) {
     return (
-      <statement>
-        <keyword>continue</keyword>
+      <>
+        {makeKeyword('continue')}
         {this.render('label')}
-      </statement>
+        <semicolon>;</semicolon>
+      </>
     )
   },
   WithStatement(node, state) {
-    return makeStatement({
+    return makeBlock({
       keyword: 'with',
       boundaries: ParenthesisBoundary,
       children: this.render('object'),
@@ -298,7 +302,7 @@ export const baseGenerator = {
     })
   },
   SwitchStatement(node, state) {
-    return makeStatement({
+    return makeBlock({
       keyword: 'switch',
       boundaries: ParenthesisBoundary,
       children: this.render('discriminant'),
@@ -307,46 +311,48 @@ export const baseGenerator = {
   },
   SwitchCase(node) {
     return (
-      <node>
-        <keyword>case</keyword>
+      <>
+        {makeKeyword('case')}
         {this.render('test')}
         <separator>:</separator>
         {this.render('consequent')}
-      </node>
+      </>
     )
   },
   ReturnStatement(node, state) {
     return (
-      <statement>
-        <keyword>return</keyword>
+      <>
+        {makeKeyword('return')}
         {node.argument ? this.render('argument') : null}
-      </statement>
+        <semicolon>;</semicolon>
+      </>
     )
   },
   ThrowStatement(node, state) {
     return (
-      <statement>
-        <keyword>throw</keyword>
+      <>
+        {makeKeyword('throw')}
         {this.render('argument')}
-      </statement>
+        <semicolon>;</semicolon>
+      </>
     )
   },
   CatchClause(node) {
     return (
-      <node>
-        <keyword>catch</keyword>
+      <>
+        {makeKeyword('catch')}
         {node.param ? makeBlock({
           boundaries: ParenthesisBoundary,
           children: this.render('param')
         }) : null}
         {this.render('body')}
-      </node>
+      </>
     )
   },
   TryStatement(node, state) {
     return (
-      <statement>
-        <keyword>try</keyword>
+      <>
+        {makeKeyword('try')}
         {this.render('block')}
         {node.handler ? this.render('handler') : null}
         {node.finalizer ? makeBlock({
@@ -354,12 +360,11 @@ export const baseGenerator = {
           boundaries: BracketBoundary,
           children: this.render('finalizer')
         }) : null}
-      </statement>
+      </>
     )
   },
   WhileStatement(node, state) {
     return makeBlock({
-      Tag: 'statement',
       keyword: 'while',
       boundaries: ParenthesisBoundary,
       children: this.render('test'),
@@ -368,7 +373,7 @@ export const baseGenerator = {
   },
   DoWhileStatement(node, state) {
     return (
-      <statement>
+      <>
         {makeBlock({
           keyword: 'do',
           boundaries: BracketBoundary,
@@ -379,12 +384,11 @@ export const baseGenerator = {
           boundaries: ParenthesisBoundary,
           children: this.render('test')
         })}
-      </statement>
+      </>
     )
   },
   ForStatement(node, state) {
     return makeBlock({
-      Tag: 'statement',
       keyword: 'for',
       boundaries: ParenthesisBoundary,
       children: withSeparator([
@@ -400,7 +404,6 @@ export const baseGenerator = {
     if (node.await) keywords.push('await')
 
     return makeBlock({
-      Tag: 'statement',
       keyword: keywords,
       boundaries: ParenthesisBoundary,
       children: [this.render('left'), (node.type[3] === 'I' ? ' in ' : ' of '), this.render('right')],
@@ -409,12 +412,12 @@ export const baseGenerator = {
   }),
   ForOfStatement: ForInStatement,
   DebuggerStatement(node, state) {
-    return <statement>debugger</statement>
+    return <statement><literal>debugger</literal><semicolon>;</semicolon></statement>
   },
   FunctionDeclaration: (FunctionDeclaration = function (node, state) {
     const keywords =  [`function${node.generator ? '*' : ''}`]
     if (node.async) keywords.unshift('async')
-    return makeDeclaration({
+    return makeBlock({
       keyword: keywords,
       variable: { value: node.id.name, role: 'function.id' },
       boundaries: ParenthesisBoundary,
@@ -423,29 +426,30 @@ export const baseGenerator = {
     })
   }),
   VariableDeclaration(node, state) {
-    return makeDeclaration({
+    return makeBlock({
       keyword: node.kind,
-      children: addSeparatorToChildren(this.render('declarations'), ',')
+      children: addSeparatorToChildren(this.render('declarations'), ','),
+      semicolon: true
     })
   },
   VariableDeclarator(node, state) {
     return (
-      <node>
+      <>
         <variable>{node.id.name}</variable>
         <operator>=</operator>
         {node.init ? this.render('init') : null}
-      </node>
+      </>
     )
   },
   ClassDeclaration(node, state) {
     return (
-      <declaration>
-        <keyword>class</keyword>
+      <>
+        {makeKeyword('class')}
         <variable role="class.id">{node.id.name}</variable>
-        {node.superClass ? <keyword>extends</keyword> : null}
+        {node.superClass ? makeKeyword('extends') : null}
         {node.superClass ? this.render('superClass') : null}
         {withBoundary(BracketBoundary, this.render('body'))}
-      </declaration>
+      </>
     )
   },
   ImportDeclaration(node, state) {
@@ -456,8 +460,8 @@ export const baseGenerator = {
     const specifiers = node.specifiers.filter(({ type }) => type === 'ImportSpecifier')
 
     return (
-      <declaration>
-        <keyword>import</keyword>
+      <>
+        {makeKeyword('import')}
         {defaultSpecifier ?
           <variable role='import.local.default'>{defaultSpecifier.local.name}</variable> : null}
         {importNamespaceSpecifier ?
@@ -471,15 +475,16 @@ export const baseGenerator = {
             return isSameName ?
               <variable>{specifier.local.name}</variable> :
               <>
-                <keyword>{specifier.imported.name}</keyword>
-                <keyword>as</keyword>
+                {makeKeyword(specifier.imported.name)}
+                {makeKeyword('as')}
                 <variable role='import.local'>{specifier.local.name}</variable>
               </>
           }), ',')
         }) : null}
-        <keyword>from</keyword>
+        {makeKeyword('from', true)}
         {this.render('source')}
-      </declaration>
+        <semicolon>;</semicolon>
+      </>
     )
   },
   ImportDefaultSpecifier(node) {
@@ -487,71 +492,72 @@ export const baseGenerator = {
   },
   ImportSpecifier(node) {
     return (
-      <specifier>
-        <keyword>{node.imported.name}</keyword>
-        <keyword>as</keyword>
+      <>
+        {makeKeyword(node.imported.name)}
+        {makeKeyword('as')}
         <variable role='import.local'>{node.local.name}</variable>
-      </specifier>
+      </>
     )
   },
   ImportNamespaceSpecifier(node) {
     return (
-      <specifier>
-        <keyword>*</keyword>
-        <keyword>as</keyword>
+      <>
+        {makeKeyword('*')}
+        {makeKeyword('as')}
         <variable role='import.local.namespace'>{node.local.name}</variable>
-      </specifier>
+      </>
     )
   },
   ExportDefaultDeclaration(node, state) {
     return (
-      <declaration>
-        <keyword>export</keyword>
-        <keyword>default</keyword>
+      <>
+        {makeKeyword('export')}
+        {makeKeyword('default')}
         {this.render('declaration')}
-      </declaration>
+      </>
     )
   },
   ExportNamedDeclaration(node, state) {
     return (
-      <declaration>
-        <keyword>export</keyword>
+      <>
+        {makeKeyword('export')}
         {
           node.declaration ?
             this.render('declaration') :
             withBoundary(BracketBoundary, addSeparatorToChildren(this.render('specifiers')))
         }
-      </declaration>
+      </>
     )
   },
   ExportSpecifier(node) {
     return (
-      <specifier>
+      <>
         <variable>{node.local.name}</variable>
-        {node.exported ? <keyword>as</keyword> : null}
+        {node.exported ? makeKeyword('as') : null}
         {node.exported ? <variable role='export.name'>{node.exported.name}</variable> : null}
-      </specifier>
+      </>
     )
   },
   ExportAllDeclaration(node, state) {
     return (
-      <declaration>
-        <keyword>export</keyword>
-        <keyword>*</keyword>
-        <keyword>from</keyword>
-        {makeStatement({
+      <>
+        {makeKeyword('export')}
+        {makeKeyword('*')}
+        {makeKeyword('from', true)}
+        {makeBlock({
           boundaries: ['"', '"'],
           children: <literal role="export.source">{node.source}</literal>
         })}
-      </declaration>
+        <semicolon>;</semicolon>
+      </>
     )
   },
 
   ObjectMethod(node){
     return (
-      <definition>
-        {node.kind === 'get' ? <keyword>get</keyword> : null}
-        {node.kind === 'set' ? <keyword>set</keyword> : null}
+      <>
+        {node.kind === 'get' ? makeKeyword('get') : null}
+        {node.kind === 'set' ? makeKeyword('set') : null}
         {node.computed ? makeBlock({
           boundaries: SquareBracketBoundary,
           children: this.render('key')
@@ -561,39 +567,39 @@ export const baseGenerator = {
           children: addSeparatorToChildren(this.render('params'), ',')
         })}
         {this.render('body')}
-      </definition>
+      </>
     )
   },
   FunctionExpression(node) {
     return (
-      <expression>
+      <>
         {makeBlock({
           keyword: 'function',
           boundaries: ParenthesisBoundary,
           children: addSeparatorToChildren(this.render('params'), ','),
           next: this.render('body')
         })}
-      </expression>
+      </>
     )
   },
   ClassExpression(node, state) {
     return (
-      <expression>
-        <keyword>class</keyword>
+      <>
+        {makeKeyword('class')}
         <variable role="class.id">{node.id.name}</variable>
-        {node.superClass ? <keyword>extends</keyword> : null}
+        {node.superClass ? makeKeyword('extends') : null}
         {node.superClass ? this.render('superClass') : null}
         {makeBlock({
           boundaries: BracketBoundary,
           children: this.render('body')
         })}
-      </expression>
+      </>
     )
   },
   ArrowFunctionExpression(node, state) {
     return (
-      <expression>
-        {node.async ? <keyword>async</keyword> : null}
+      <>
+        {node.async ? makeKeyword('async') : null}
         {makeBlock({
           boundaries: ParenthesisBoundary,
           children: addSeparatorToChildren(this.render('params'), ',')
@@ -606,39 +612,39 @@ export const baseGenerator = {
           }) :
           this.render('body')
         }
-      </expression>
+      </>
     )
   },
   ThisExpression(node, state) {
-    return <expression><variable role='this'>this</variable></expression>
+    return <variable role='this'>this</variable>
   },
   Super(node, state) {
-    return <expression><variable role='super'>this</variable></expression>
+    return <variable role='super'>this</variable>
   },
   // TODO
   RestElement: (RestElement = function (node, state) {
     return (
-      <misc>
+      <>
         <operator>...</operator>
         {this.render('argument')}
-      </misc>
+      </>
     )
   }),
   SpreadElement: RestElement,
   YieldExpression(node, state) {
     return (
-      <expression>
-        <keyword>{node.delegate ? 'yield*' : 'yield'}</keyword>
+      <>
+        {makeKeyword(node.delegate ? 'yield*' : 'yield')}
         {this.render('argument')}
-      </expression>
+      </>
     )
   },
   AwaitExpression(node, state) {
     return (
-      <expression>
-        <keyword>await</keyword>
+      <>
+        {makeKeyword('await')}
         {this.render('argument')}
-      </expression>
+      </>
     )
   },
   TemplateLiteral(node, state) {
@@ -666,48 +672,42 @@ export const baseGenerator = {
   },
   // TODO
   TaggedTemplateExpression(node, state) {
-    this.render('tag')
-    this.render('quasi')
+    return <>
+      {this.render('tag')}
+      {this.render('quasi')}
+    </>
   },
   ArrayExpression: (ArrayExpression = function (node, state) {
-    return (
-      <expression>
-        {withBoundary(SquareBracketBoundary, addSeparatorToChildren(this.render('elements'), ','))}
-      </expression>
-    )
+    return withBoundary(SquareBracketBoundary, addSeparatorToChildren(this.render('elements'), ','))
   }),
   ArrayPattern: ArrayExpression,
   ObjectExpression(node, state) {
-    return (
-      <expression>
-        {withBoundary(BracketBoundary, addSeparatorToChildren(this.render('properties'), ','))}
-      </expression>
-    )
+    return withBoundary(BracketBoundary, addSeparatorToChildren(this.render('properties'), ','))
   },
   Property(node, state) {
     if (node.method) {
       return (
-        <node>
-          {node.static ? <keyword>static</keyword> : null}
-          {node.kind === 'get' ? <keyword>get</keyword> : null}
-          {node.kind === 'set' ? <keyword>set</keyword> : null}
-          {node.value.async ? <keyword>async</keyword> : null}
-          {node.value.generator ? <keyword>*</keyword> : null}
-          {node.computed ? makeStatement({
+        <>
+          {node.static ? makeKeyword('static') : null}
+          {node.kind === 'get' ? makeKeyword('get') : null}
+          {node.kind === 'set' ? makeKeyword('set') : null}
+          {node.value.async ? makeKeyword('async') : null}
+          {node.value.generator ? makeKeyword('*') : null}
+          {node.computed ? makeBlock({
             boundaries: SquareBracketBoundary,
             children: this.render('key')
           }) : this.render('key')}
           {this.render('value')}
-        </node>
+        </>
       )
     }
 
     if (node.shorthand) return this.render('value')
 
     return (
-      <node>
+      <>
         {node.computed ?
-          makeStatement({
+          makeBlock({
             boundaries: SquareBracketBoundary,
             children: this.render('key')
           }) :
@@ -715,87 +715,78 @@ export const baseGenerator = {
         }
         <separator>:</separator>
         {this.render('value')}
-      </node>
+      </>
     )
 
   },
   ObjectProperty(node) {
     return (
-      <node>
+      <>
         {this.render('key')}
         <separator>:</separator>
         {this.render('value')}
-      </node>
+      </>
     )
   },
   ObjectPattern(node, state) {
-    return (
-      <pattern>
-        {withBoundary(BracketBoundary, addSeparatorToChildren(this.render('properties'), ','))}
-      </pattern>
-    )
+    return withBoundary(BracketBoundary, addSeparatorToChildren(this.render('properties'), ','))
   },
   SequenceExpression(node, state) {
-    return (
-      <expression>
-        {withBoundary(ParenthesisBoundary, addSeparatorToChildren(this.render('expression'), ','))}
-      </expression>
-    )
+    return withBoundary(ParenthesisBoundary, addSeparatorToChildren(this.render('expression'), ','))
   },
   UnaryExpression(node, state) {
     if (!node.prefix) {
       return (
-        <expression>
+        <>
           {this.render('argument')}
           <operator>{node.operator}</operator>
-        </expression>
+        </>
       )
     }
 
     return (
-      <expression>
+      <>
         <operator>{node.operator}</operator>
         {(EXPRESSIONS_PRECEDENCE[node.argument.type] <
           EXPRESSIONS_PRECEDENCE.UnaryExpression) ?
             withBoundary(ParenthesisBoundary, this.render('argument')):
             this.render('argument')
         }
-      </expression>
+      </>
     )
   },
   UpdateExpression(node, state) {
     return (
-      <expression>
+      <>
         {node.prefix ? <operator>{node.operator}</operator> : null}
         {this.render('argument')}
         {!node.prefix ? <operator>{node.operator}</operator> : null}
-      </expression>
+      </>
     )
 
   },
   AssignmentExpression(node, state) {
     return (
-      <expression>
+      <>
         {this.render('left')}
         <operator>{node.operator}</operator>
         {this.render('right')}
-      </expression>
+      </>
     )
   },
   AssignmentPattern(node, context) {
     return (
-      <pattern>
+      <>
         {this.render('left')}
         <operator>=</operator>
         {this.render('right')}
-      </pattern>
+      </>
     )
   },
   BinaryExpression: (BinaryExpression = function (node, state) {
     const isIn = node.operator === 'in'
 
     return makeBlock({
-      Tag: 'expression',
       boundaries: isIn ? ParenthesisBoundary : null,
       children: [
         makeBlock({
@@ -817,7 +808,7 @@ export const baseGenerator = {
   LogicalExpression: BinaryExpression,
   ConditionalExpression(node, state) {
     return (
-      <expression>
+      <>
         {makeBlock({
           boundaries: (
             EXPRESSIONS_PRECEDENCE[node.test.type] >
@@ -829,27 +820,27 @@ export const baseGenerator = {
         {this.render('consequent')}
         <operator>:</operator>
         {this.render('alternate')}
-      </expression>
+      </>
     )
   },
   NewExpression(node, state) {
     return (
-      <expression>
-        <keyword>new</keyword>
+      <>
+        {makeKeyword('new')}
         {(EXPRESSIONS_PRECEDENCE[node.callee.type] <
           EXPRESSIONS_PRECEDENCE.CallExpression ||
           hasCallExpression(node.callee)) ?
-          makeStatement({
+          makeBlock({
             boundaries: ParenthesisBoundary,
             children: this.render('callee'),
           }) :
           this.render('callee')
         }
-        {makeStatement({
+        {makeBlock({
           boundaries: ParenthesisBoundary,
           children: addSeparatorToChildren(this.render('arguments'), ',')
         })}
-      </expression>
+      </>
     )
   },
   CallExpression(node, state) {
@@ -861,7 +852,7 @@ export const baseGenerator = {
     const identifierCallee = node.callee.type === 'Identifier'
 
     return (
-      <expression>
+      <>
         {makeBlock({
           boundaries: simpleCallee ? null : ParenthesisBoundary,
           // children: simpleCallee ? <variable>{node.callee.name}</variable>: this.render('callee')
@@ -872,7 +863,7 @@ export const baseGenerator = {
           boundaries: ParenthesisBoundary,
           children: addSeparatorToChildren(this.render('arguments'), ',')
         })}
-      </expression>
+      </>
     )
   },
   MemberExpression(node, state) {
@@ -882,7 +873,7 @@ export const baseGenerator = {
     )
 
     return (
-      <expression>
+      <>
         {makeBlock({
           boundaries: simpleObject ? null : ParenthesisBoundary,
           // children: simpleObject ? <variable>{node.object.name}</variable> : this.render('object')
@@ -898,16 +889,16 @@ export const baseGenerator = {
             {this.render('property')}
           </>)
         }
-      </expression>
+      </>
     )
   },
   MetaProperty(node, state) {
     return (
-      <node>
+      <>
         <variable>{node.meta.name}</variable>
         <operator>.</operator>
         <variable role="property">{node.property.name}</variable>
-      </node>
+      </>
     )
   },
   Identifier(node, state) {
@@ -935,73 +926,60 @@ export const baseGenerator = {
   //jsx related
   JSXElement(node) {
     return (
-      <node>
+      <>
         {this.render('openingElement')}
-        {node.closingElment ? this.render('closingElement'): null}
-      </node>
+        {this.render('children')}
+        {node.closingElement ? this.render('closingElement'): null}
+      </>
     )
   },
   JSXOpeningElement(node) {
-    return (
-      <node>
-        {withBoundary(node.selfClosing ? JSXSelfClosingBoundary : JSXOpeningBoundary,
+    return withBoundary(node.selfClosing ? JSXSelfClosingBoundary : JSXOpeningBoundary,
           <>
             {this.render('name')}
-            {this.render('attributes')}
+            <space>{' '}</space>
+            {addSeparatorToChildren(this.render('attributes'), ' ')}
           </>
-        )}
-      </node>
-    )
+        )
   },
   JSXIdentifier(node) {
     return <identifier>{node.name}</identifier>
   },
   JSXClosingElement(node) {
-    return (
-      <node>
-        {withBoundary(JSXClosingBoundary,
-          this.render('name'))}
-      </node>
-    )
+    return withBoundary(JSXClosingBoundary, this.render('name'))
   },
   JSXSpreadAttribute(node) {
-    return (
-      <node>
-        {withBoundary(BracketBoundary,
+    return withBoundary(BracketBoundary,
           <>
             <operator>...</operator>
             {this.render('argument')}
           </>
-        )}
-      </node>
     )
   },
   JSXAttribute(node) {
     return (
-      <node>
+      <>
         {this.render('name')}
         {node.value!==null ? <operator>=</operator> : null}
         {node.value!==null ? this.render('value'): null}
-      </node>
+      </>
     )
   },
   JSXExpressionContainer(node) {
-    return <node>
-      {withBoundary(BracketBoundary, this.render('expression'))}
-    </node>
+    return withBoundary(BracketBoundary, this.render('expression'))
   },
   JSXFragment(node) {
-    return <node>
+    return <>
       {this.render('openingFragment')}
       {this.render('children')}
       {node.closingFragment ? this.render('closingFragment') : null}
-    </node>
+    </>
   },
   JSXOpeningFragment() {
-    return <node>{withBoundary(JSXOpeningBoundary, null)}</node>
+    return withBoundary(JSXOpeningBoundary, null)
   },
   JSXClosingFragment() {
-    return <node>{withBoundary(JSXClosingBoundary, null)}</node>
+    return withBoundary(JSXClosingBoundary, null)
   },
   JSXText(node) {
     return <literal>{node.value}</literal>
@@ -1019,46 +997,39 @@ export class Generator {
     const node = parentNode[childName]
 
     return !Array.isArray(node) ?
-      this.renderOne(node, childName, parentNode) :
+      this.renderOne(node, childName, parentNode, parentNode) :
       this.renderCollection(node, childName, parentNode)
-
   }
 
   renderCollection(node, name, parent) {
     const vnode = (
-      <container data-name={name}>
-        {node.map(child => this.renderOne(child, `${name}[]`, parent))}
-      </container>
+      <>
+        {node.map(child => this.renderOne(child, `${name}[]`, node, parent))}
+      </>
     )
 
-    this.companion && this.companion({ parent, name, node, vnode, isCollection: true } )
-
-    return vnode
+    vnode.name = `${name}[]`
+    // companion 可以 hijack
+    return this.companion ? this.companion({ parent, parentNode: parent, name, node, vnode } ) : vnode
   }
 
 
-  // CAUTION 所有 renderOne 出来的节点就是 node 节点，是能被整体选中的。同时还会有 firstTextNode/lastTextNode 链接。
-  renderOne(node, name, parent) {
+  // renderCollection 再渲染出来的，parent 是 collection 节点，parentNode 才是 node 节点。
+  renderOne(node, name, parent, parentNode) {
     this.stack.push(node)
     if (!this.generator[node.type]) {
       throw new Error(`unknown node type ${node.type}`)
     }
     invariant(this.generator[node.type], `unknown node type ${node.type}`)
     const vnode = this.generator[node.type].call(this, node)
-    invariant(vnode.type !== Fragment, 'vnode should not be fragment')
-    const props = {
-      'data-name': name,
-      'data-type': node.type
-    }
-    const vnodeWithProps = cloneElement(vnode, props)
-
-    const applyLink = () => this.linkNode(parent, name, node)
-    this.companion && this.companion({ parent, name, node, vnode: vnodeWithProps, applyLink })
+    vnode.name = node.type
+    const returnVnode = this.companion ? this.companion({ parent, parentNode, name, node, vnode }) : vnode
     this.stack.pop()
 
-    return vnodeWithProps
+    return returnVnode
   }
 
+  // 这里建立的是 ast node 的关系。
   linkNode(inputParent, inputKey, child) {
     // CAUTION 这里的 parent/key 一定要从 child 上面取，因为可能是 generate 中传进来的片段， parent/key 是伪造的。
     // CAUTION 暂时不需要清理，因为child 肯定会被回收。

@@ -1,73 +1,66 @@
 /** @jsx createElement */
-import createElement from '../../base/render/createElement';
-import Vnode from '../../base/render/VNode'
-import { patch, append } from '../../base/render/digest'
-import { invariant } from '../../base/util';
-import paper from "paper";
+import { createElement, vnodeComputed, propTypes, ref } from 'axii';
 
-function replaceItem(arr, origin, next) {
-  const index = arr.indexOf(origin)
-  if (index === -1) return false
-  arr.splice(index, 1, next)
-  return true
+export const propNamespace = 'TabContainer'
+
+export default function TabContainer({children, onClose, activeKey}) {
+
+  const setActiveTab = (index) => {
+    activeKey.value = index
+  }
+
+  const headers = vnodeComputed(() => {
+    return children.map((child, index) => {
+      const { key, content} = child.props[`${propNamespace}:header`]
+      return (
+        <tabhead inline inline-padding-10px inline-border-bottom-3px key={key} var-active={index===activeKey.value}>
+          <name inline inline-margin-right-4px onClick={() => setActiveTab(index)}>{content}</name>
+          <close onClick={() => onClose(key)}>x</close>
+        </tabhead>
+      )
+    })
+  })
+
+  const tabs = vnodeComputed(() => children.map((child, index) => {
+    return (
+      <block block-visible-none={index !== activeKey.value} key={child.key}>
+        {child}
+      </block>
+    )
+  }))
+
+  return (
+    <block flex-display flex-direction-column>
+      <headers block>{headers}</headers>
+      <block block-overflow-y-scroll flex-grow-1>{tabs}</block>
+    </block>
+  )
 }
 
-export default class View {
-  constructor() {
-    this.topLayers = []
-    this.bottomLayers = []
-    this.defaultLayer = null
+TabContainer.propTypes = {
+  activeKey: propTypes.number.default(() => ref(0))
+}
+
+TabContainer.Style = (style) => {
+  style.headers  = {
+    background: '#1e2130',
+    boxShadow: '0px 2px 2px #111'
   }
-  getDefaultLayer() {
-    return {
-      render: (output) => {
-        this.defaultLayer = output
-      }
-    }
+  style.tabhead = {
+    '@define': {active: [true, false]},
+    color: '#57c2b7',
+    'background[active=true]': '#313652',
+    'border-bottom-style[active=true]': 'solid',
+    'border-bottom-color[active=true]': '#a917b5',
+    fontSize: 14,
+    lineHeight: 14
   }
-  pushLayer() {
-    const placeHolder = {}
-    this.topLayers.push(placeHolder)
-    return {
-      render: (output) => {
-        replaceItem(this.topLayers, placeHolder, output)
-      }
-    }
+  style.name = {
+    cursor: 'pointer'
   }
-  unshiftLayer(render){
-    this.bottomLayers.unshift(render)
+
+  style.close = {
+    color : '#ccc'
   }
-  onMount = (editor) => {
-    this.editor = editor
-    this.resizeObserver = new ResizeObserver(([{ contentRect }]) => {
-      // setup canvas
-      console.log(contentRect)
-      // this.bottomLayerCanvas.style.width = `${contentRect.width}px`
-      // this.bottomLayerCanvas.style.height = `${contentRect.height}px`
-    })
-    this.resizeObserver.observe(this.editor)
-  }
-  onMountCanvas = (canvas) => {
-    this.bottomLayerCanvas = canvas
-    paper.setup(this.bottomLayerCanvas)
-    this.bottomLayers.forEach(render => render())
-    paper.view.draw()
-  }
-  render(container) {
-    patch(container,
-      <editor style={{position: 'relative'}} ref={this.onMount}>
-        <canvas height="1000" width="1000" style={{position: 'absolute', left: 0, top: 0}} ref={this.onMountCanvas}></canvas>
-        {this.defaultLayer}
-        {this.topLayers}
-      </editor>,
-    )
-  }
-  patch = (container, next) => {
-    // 支持 vnode， 或者简单的对象。
-    invariant(next instanceof Vnode, 'can only view vnode')
-    return patch(container, next)
-  }
-  append = (container, sibling) => {
-    return append(container, sibling)
-  }
+
 }

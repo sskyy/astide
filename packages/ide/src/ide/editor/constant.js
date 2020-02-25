@@ -2,3 +2,4 @@ export const EVENT_DOM_SELECT = 'EVENT_DOM_SELECT'
 export const EVENT_INPUT_CHANGE = 'EVENT_INPUT_CHANGE'
 
 export const VIEW_NODE_TYPE_TEXT = 3
+export const VIEW_NODE_TYPE_COMMET = 8

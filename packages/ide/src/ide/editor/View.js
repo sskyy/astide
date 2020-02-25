@@ -64,7 +64,7 @@ export default class View {
   }
   patch = (container, next) => {
     // 支持 vnode， 或者简单的对象。
-    invariant(next instanceof Vnode, 'can only view vnode')
+    invariant(next instanceof Vnode, 'can only patch view vnode')
     return patch(container, next)
   }
   append = (container, sibling) => {

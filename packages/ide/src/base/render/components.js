@@ -14,27 +14,19 @@ export function withSeparator(arr, item) {
   }, [])
 }
 
-export function makeStatement({...argv}) {
-  return makeBlock({
-    Tag: 'statement',
-    ...argv
-  })
+export function makeKeyword(name, leftSpace) {
+  return <>{leftSpace ? <space>{` `}</space> : null}<keyword>{name}</keyword><space>{' '}</space></>
 }
 
-export function makeDeclaration({...argv}) {
-  return makeBlock({
-    Tag: 'declaration',
-    ...argv
-  })
-}
-
-export function makeBlock({ Tag = Fragment, keyword, variable, boundaries, children, next }) {
+export function makeBlock({ Tag = Fragment, keyword, variable, boundaries, children, next, semicolon }) {
   return (
     <Tag>
-      {keyword ? Array.isArray(keyword) ? (keyword.map(k =><keyword>{k}</keyword>)) : (<keyword>{keyword}</keyword>) : null}
+      {keyword ? Array.isArray(keyword) ? (keyword.map(k =>makeKeyword(k))) : makeKeyword(keyword) : null}
+      {keyword ? <space>{` `}</space> : null}
       {variable ? <variable role={variable.role}>{variable.value}</variable> : null}
       {children ? (boundaries ? withBoundary(boundaries, children) : children) : null}
       {next ? next : null}
+      {semicolon ? <semicolon>;</semicolon> : null}
     </Tag>
   )
 }
