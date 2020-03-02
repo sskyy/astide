@@ -24,7 +24,6 @@ function isLiteralValidInput(content, tagName) {
 
 const literalLikeNode = ['literal', 'identifier', 'variable']
 
-
 export function remove(astView, parser) {
   const { selection } = astView
   if (selection.startOffset === 0) {
