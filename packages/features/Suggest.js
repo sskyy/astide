@@ -5,7 +5,7 @@ import Feature from '../bootstrap/Feature'
  * system 是注入的
  */
 export default class Suggest extends Feature{
-  viewDidRender() {
+  editorDidMount() {
     // system 是注入的。
     this.system.editor.current.onInput(function* onInput(content, context){
       /**
