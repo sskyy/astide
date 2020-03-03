@@ -4,7 +4,8 @@
   "description": "这里面存的是 ASTIDE 自身启动的脚本。 IDE server 需要提供文件输出、数据服务。最好也能提供调试功能。",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start" : "node ./server/server.js"
   },
   "dependencies": {
     "@babel/cli": "^7.4.4",
