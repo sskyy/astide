@@ -1,5 +1,5 @@
 import { IDE, render } from 'astide'
-import 'astide/ASTIDEDefaultLayout.scss'
+import 'astide/ASTIDEDefaultLayout.less'
 
 import testScript from '!!raw-loader!./testScript.js'
 

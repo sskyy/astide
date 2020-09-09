@@ -3,9 +3,9 @@ const express = require('express');
 const webpackMiddleware = require('webpack-dev-middleware')
 const webpackConfig = require('../webpack.config')
 const compiler = webpack(webpackConfig);
-import useCodeDatabase from './codeDatabase'
-import useSubProcessCommand from './subProcessCommand'
-import useFeatures from './features'
+const useCodeDatabase = require('./codeDatabase')
+const useSubProcessCommand = require('./subProcessCommand')
+// const useFeatures = require('./features')
 const app = express()
 const pm2 = require('pm2')
 const util = require('util')
@@ -24,7 +24,7 @@ app.use(webpackMiddleware(compiler,  {
 
 useCodeDatabase(app)
 useSubProcessCommand(app, pm2)
-useFeatures(app, pm2)
+// useFeatures(app, pm2)
 
 
 app.listen(3000, () => console.log('IDE backend listening on port 3000. Visit ide.html for entry'))

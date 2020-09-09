@@ -21,7 +21,7 @@ import { createElement } from 'axii';
  */
 import GridView from './base/GridView'
 
-export default function layout({ navigators, EditorRouter, StatusBar, focusManager, Workspace }) {
+export default function layout({ navigators, EditorRouter, StatusBar, focusManager, Workspace, ToolBar }) {
   // TODO 这里有个领域问题，Editor 实际上不需要知道自己是否是 active。只是出于性能需要所以传入的。active 只是 codePiece 需要知道而已。怎么表达这个性能优化逻辑。
 
   const MainNavigator = navigators.Main
@@ -34,6 +34,7 @@ export default function layout({ navigators, EditorRouter, StatusBar, focusManag
 
   return (
     <GridView layout={windowLayout} layout:block-height="100%">
+      <ToolBar GridView:place="top" layout:block-height="100%"/>
       <MainNavigator GridView:place="left" layout:block-height="100%" layout:block-overflow-x-scroll/>
       <Workspace GridView:place="right" layout:block-height="100%">
         {(props) => (

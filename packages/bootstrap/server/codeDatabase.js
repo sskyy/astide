@@ -1,6 +1,6 @@
 const {Code, Category, syncTables} = require('../scripts/database')
 
-export default function useCodeDatabase(app) {
+module.exports = function useCodeDatabase(app) {
 // 1. sqlite codebase 的增删改查。
   syncTables()
 

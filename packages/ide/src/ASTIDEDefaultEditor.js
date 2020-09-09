@@ -27,7 +27,8 @@ export default function ASTIDEDefaultEditor({ codePiece, focused }, ref) {
     background: '#282a36'
   }
   return (
-    <div  style={style}>
+    <div  style={style} >
+
       <div ref={renderEditor}></div>
     </div>
 

@@ -24,8 +24,8 @@ const projectPath = path.resolve(__dirname, '../../')
 module.exports = {
   mode: 'development',
   entry: {
-    editor: './editor/editor.js',
-    // ide: './ide/ide.js',
+    // editor: './editor/editor.js',
+    ide: './ide/ide.js',
     // fs: './fs/fs.js',
     // paper: './paper/paper.js',
     // iframe: './iframe/iframe.js',
@@ -40,18 +40,18 @@ module.exports = {
     //     filename: 'layout.html',
     //     template: './blockLayout/layout.html',
     //   }),
-    new HtmlWebpackPlugin({
-      title: 'Editor Example',
-      chunks: ['editor'],
-      filename: 'editor.html',
-      template: './editor/editor.html',
-    }),
     // new HtmlWebpackPlugin({
-    //   title: 'IDE Example',
-    //   chunks: ['ide'],
-    //   filename: 'ide.html',
-    //   template: 'ide/ide.html',
+    //   title: 'Editor Example',
+    //   chunks: ['editor'],
+    //   filename: 'editor.html',
+    //   template: './editor/editor.html',
     // }),
+    new HtmlWebpackPlugin({
+      title: 'IDE Example',
+      chunks: ['ide'],
+      filename: 'ide.html',
+      template: 'ide/ide.html',
+    }),
     // new HtmlWebpackPlugin({
     //   title: 'FS Example',
     //   chunks: ['fs'],

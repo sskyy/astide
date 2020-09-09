@@ -3,6 +3,7 @@ import DefaultEditor from 'axii-component-iframe!../ASTIDEDefaultEditor'
 import createRouter from '../base/createRouter'
 import NavigatorViews from './NavigatorViews'
 import StatusBar from '../base/StatusBar'
+import ToolBar from '../base/ToolBar'
 
 import defaultLayout from '../ASTIDELayout'
 import DefaultCodebase from '../ASTIDECodebase'
@@ -24,6 +25,7 @@ export default class IDE {
     this.layout = layout
     this.components = {
       StatusBar,
+      ToolBar,
       ...components,
     }
 

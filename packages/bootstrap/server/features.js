@@ -20,7 +20,7 @@ function createSystemProxy() {
 
 // TODO feature 可以有顺序啊！！！
 
-export default function useFeatures(app, pm2, Features = defaultFeatures) {
+module.exports = function useFeatures(app, pm2, Features = defaultFeatures) {
   // TODO 为各种 feature 生成子进程
   const features = {}
 

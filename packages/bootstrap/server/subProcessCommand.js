@@ -1,6 +1,6 @@
 const {Code, Category, syncTables} = require('../scripts/database')
 
-export default function useSubProcessCommand(app, pm2) {
+module.exports = function useSubProcessCommand(app, pm2) {
 // TODO 接受 dev 命令，开新进程执行 ./project 目录下的 index，传命令给它。
   let subProcess = null
   const prepareDataForCommand = {
