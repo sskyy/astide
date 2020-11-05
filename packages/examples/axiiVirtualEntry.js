@@ -1,4 +1,4 @@
-import App from '/Users/jiamiu/Documents/work/personal/astide/packages/examples/node_modules/babel-loader/lib/index.js??ref--4!/Users/jiamiu/Documents/work/personal/astide/packages/ide/src/ASTIDEDefaultEditor.js'; import { createElement,render, vnodeComputed, reactive, ref, createRef } from 'axii'
+import App from '/Users/jiamiu/Work/personal/astide/packages/examples/node_modules/babel-loader/lib/index.js??ref--4!/Users/jiamiu/Work/personal/astide/packages/ide/src/ASTIDEDefaultEditor.js'; import { createElement,render, vnodeComputed, reactive, ref, createRef } from 'axii'
 import { RPCClient } from 'astide/base/RPC';
 
 const root = document.createElement('div')
