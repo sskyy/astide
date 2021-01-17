@@ -40,14 +40,13 @@ export default class Workspace extends Event{
   }
   // TODO close 在这里处理
   get Layout() {
-    const WorkspaceView = ({children}) => {
-      const Editor = children[0]
+    const WorkspaceView = ({ Editor }) => {
       invariant(typeof Editor === 'function', 'should pass a editor as children 0')
 
       return (
         <workspace block>
           <GridView layout={this.layout} layout:block-height="100%">
-            {vnodeComputed(() => Array.from(this.regions.entries(), ([regionName, codePieces]) => {
+            {() => Array.from(this.regions.entries(), ([regionName, codePieces]) => {
               // TODO 先用文字替代，之后改成 workspace 控制 header
               return (
                 <TabContainer GridView:place={regionName} key={regionName} layout:block-height="100%" >
@@ -61,7 +60,7 @@ export default class Workspace extends Event{
                   )}
                 </TabContainer>
               )
-            }))}
+            })}
           </GridView>
         </workspace>
       )

@@ -1,16 +1,18 @@
 /** @jsx createElement */
-import { createElement, vnodeComputed, propTypes, ref } from 'axii';
+import { createElement, vnodeComputed, propTypes, ref, flattenChildren } from 'axii';
 
 export const propNamespace = 'TabContainer'
 
 export default function TabContainer({children, onClose, activeKey}) {
 
+  const flattenedChildren = flattenChildren(children)
+
   const setActiveTab = (index) => {
     activeKey.value = index
   }
 
-  const headers = vnodeComputed(() => {
-    return children.map((child, index) => {
+  const headers = () => {
+    return flattenedChildren.map((child, index) => {
       const { key, content} = child.props[`${propNamespace}:header`]
       return (
         <tabhead inline inline-padding-10px inline-border-bottom-3px key={key} var-active={index===activeKey.value}>
@@ -19,15 +21,15 @@ export default function TabContainer({children, onClose, activeKey}) {
         </tabhead>
       )
     })
-  })
+  }
 
-  const tabs = vnodeComputed(() => children.map((child, index) => {
+  const tabs = () => flattenedChildren.map((child, index) => {
     return (
       <block block-visible-none={index !== activeKey.value} key={child.key}>
         {child}
       </block>
     )
-  }))
+  })
 
   return (
     <block flex-display flex-direction-column>

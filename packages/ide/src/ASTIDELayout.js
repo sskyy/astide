@@ -32,19 +32,19 @@ export default function layout({ navigators, EditorRouter, StatusBar, focusManag
     [30, 'bottom']
   ]
 
+  const Editor = (props) => (
+    <EditorRouter
+      {...props}
+      focused={focusManager.deviate('editor', props.uri)}
+      onFocus={() => focusManager.focus('editor', props.uri)}
+    />
+  )
+
   return (
     <GridView layout={windowLayout} layout:block-height="100%">
       <ToolBar GridView:place="top" layout:block-height="100%"/>
       <MainNavigator GridView:place="left" layout:block-height="100%" layout:block-overflow-x-scroll/>
-      <Workspace GridView:place="right" layout:block-height="100%">
-        {(props) => (
-          <EditorRouter
-            {...props}
-            focused={focusManager.deviate('editor', props.uri)}
-            onFocus={() => focusManager.focus('editor', props.uri)}
-          />
-        )}
-      </Workspace>
+      <Workspace GridView:place="right" layout:block-height="100%" Editor={Editor}/>
       <StatusBar GridView:place="bottom" layout:block-height="100%"/>
     </GridView>
   )

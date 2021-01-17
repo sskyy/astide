@@ -16,7 +16,7 @@ const getStyleLoaders = (cssOptions, preProcessor) => {
   return loaders;
 };
 
-const devEnginePath = path.resolve('../../../@ariesate/engine/packages')
+const devEnginePath = path.resolve('../../../engine/packages')
 const projectPath = path.resolve(__dirname, '../../')
 
 

@@ -1,12 +1,13 @@
 /** @jsx createElement */
-import { createElement } from 'axii';
+import { createElement, flattenChildren } from 'axii';
+import {invariant} from "./util";
 export const propNamespace = 'GridView'
 
 export default function GridView({layout, children }) {
 
   const childrenIndexByPlace = {}
-  children.forEach((child) => {
-    if (!child.props) debugger
+  flattenChildren(children).forEach((child) => {
+    invariant(child.props, 'child is not valid')
     childrenIndexByPlace[child.props[`${propNamespace}:place`]] = child
   })
 

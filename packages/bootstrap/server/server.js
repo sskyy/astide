@@ -27,4 +27,4 @@ useSubProcessCommand(app, pm2)
 // useFeatures(app, pm2)
 
 
-app.listen(3000, () => console.log('IDE backend listening on port 3000. Visit ide.html for entry'))
+app.listen(3000, () => console.log('IDE backend listening on port 3000. Visit /page/ide.html for entry'))
